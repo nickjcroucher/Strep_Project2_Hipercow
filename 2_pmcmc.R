@@ -14,7 +14,7 @@ source("global/all_function.R") # Collected functions stored here!
 
 # To make my life easier I compile the Serotype 1 cases into a new object called sir_data
 # data is fed as an input to mcstate::particle_filter_data
-incidence <- read_csv("inputs/incidence.csv", show_col_types = FALSE)
+incidence <- read.csv("inputs/incidence.csv")
 
 dt <- 1 # rate must be an integer; 0.25 to make it 4 days, I make it 1
 sir_data <- mcstate::particle_filter_data(data = incidence,
@@ -43,6 +43,7 @@ pars <- list(A_ini = 6e7*(2e-6), # S_ini*(2e-6) = 120 people,
 ) # Serotype 1 is categorised to have the lowest carriage duration
 
 # https://mrc-ide.github.io/odin-dust-tutorial/mcstate.html#/the-model-over-time
+n_particles <- 50 # Trial n_particles = 50
 filter <- mcstate::particle_filter$new(data = sir_data,
                                        model = gen_sir, # Use odin.dust input
                                        n_particles = n_particles,
@@ -69,9 +70,9 @@ filter$run(pars)
 # 4 * 4 * 4
 # # [1] 64
 # 4 * 4 * 4 * 500
-# # [1] 32000 --> particles needed
+# # [1] 32000 --> particles needed for var(x) = 1
 
-n_particles <- 50 # Based on calculation in 4 cores with var(x) ~ 267: 32000
+n_particles <- 50 # Update n_particles based on calculation in 4 cores with var(x) ~ 267: 32000
 
 priors <- prepare_priors(pars)
 proposal_matrix <- matrix(69, nrow = 6, ncol = 6)
