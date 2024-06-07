@@ -1,0 +1,127 @@
+# 2. Data Fitting ##############################################################
+library(mcstate)
+library(coda)
+
+source("global/all_function.R") # Collected functions stored here!
+
+# The anatomy of an mcstate particle filter, as noted above, consists of three main components: \n 
+# 1. A set of observations to fit the model to, generated using mcstate::particle_filter_data(). \n 
+# 2. A model to fit, which must be a dust generator, either dust::dust() or odin.dust::odin_dust(). \n 
+# 3. A comparison function, which is an R function which calculates the likelihood of the state given the data at one time point.
+
+# There is a calibration function in mcstate to fit our model to data.
+# https://mrc-ide.github.io/mcstate/articles/sir_models.html
+
+# To make my life easier I compile the Serotype 1 cases into a new object called sir_data
+# data is fed as an input to mcstate::particle_filter_data
+incidence <- read_csv("inputs/incidence.csv", show_col_types = FALSE)
+
+dt <- 1 # rate must be an integer; 0.25 to make it 4 days, I make it 1
+sir_data <- mcstate::particle_filter_data(data = incidence,
+                                          time = "day",
+                                          rate = 1 / dt,
+                                          initial_time = 0) # Initial time makes t0 start from 0 (not 1)
+
+# Annotate the data so that it is suitable for the particle filter to use
+rmarkdown::paged_table(sir_data)
+
+
+## 2a. Model Load ##############################################################
+# The model below is stochastic, closed system SADR model that I have created before
+# I updated the code, filled the parameters with numbers;
+# e.g.dt <- user(0) because if dt <- user() generates error during MCMC run
+gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
+
+# This is part of sir odin model:
+pars <- list(A_ini = 6e7*(2e-6), # S_ini*(2e-6) = 120 people,
+             time_shift = 0.2,
+             beta_0 = 0.06565,
+             beta_1 = 0.07,
+             wane = 0.002,
+             log_delta = (-4.98), # will be fitted to logN(-7, 0.7)
+             sigma_2 = 1
+) # Serotype 1 is categorised to have the lowest carriage duration
+
+# https://mrc-ide.github.io/odin-dust-tutorial/mcstate.html#/the-model-over-time
+filter <- mcstate::particle_filter$new(data = sir_data,
+                                       model = gen_sir, # Use odin.dust input
+                                       n_particles = n_particles,
+                                       compare = case_compare,
+                                       seed = 1L)
+
+filter$run(pars)
+
+# Variance and particles estimation (as suggested by Rich)
+# parallel::detectCores() # I have 4 cores
+# x <- replicate(30, filter$run(pars))
+# x
+# 
+# var(x)
+# # [1] 266.5598
+# 69 / 267 # whyy they choose 69? Assume if we set var = 69, how many particles are needed?
+# # [1] 0.258427
+# 69  / 4
+# # [1] 17.25
+# 69  / 4  /4
+# # [1] 4.3125
+# 69  / 4  /4 /4
+# # [1] 1.078125
+# 4 * 4 * 4
+# # [1] 64
+# 4 * 4 * 4 * 500
+# # [1] 32000 --> particles needed
+
+n_particles <- 50 # Based on calculation in 4 cores with var(x) ~ 267: 32000
+
+priors <- prepare_priors(pars)
+proposal_matrix <- matrix(69, nrow = 6, ncol = 6)
+rownames(proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+colnames(proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+
+mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = proposal_matrix, transform = transform)
+
+n_steps <- 100 #1e6
+n_burnin <- n_steps/2
+
+# Use deterministic model by add filter_deterministic
+# https://mrc-ide.github.io/mcstate/articles/deterministic.html
+# Index function is optional when only a small number of states are used in comparison function.
+control <- mcstate::pmcmc_control(n_steps = n_steps, progress = TRUE)
+filter_deterministic <- mcstate::particle_deterministic$new(data = sir_data,
+                                                            model = gen_sir,
+                                                            compare = case_compare
+                                                            # index = index
+)
+
+
+# The pmcmc run by using Hipercow! #############################################
+# https://mrc-ide.github.io/hipercow/articles/windows.html
+library(hipercow)
+# sudo mount -a
+
+windows_authenticate()
+windows_check()
+
+# See filesystems and paths, CHANGE wd to those in /etc/fstab
+setwd("/home/ron/net/home")
+
+hipercow_init(driver = "windows")
+hipercow_configure("windows", r_version = "4.4.0")
+windows_check()
+hipercow_configuration()
+
+hipercow_hello()
+
+pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter_deterministic, control = control)
+
+
+processed_chains <- mcstate::pmcmc_thin(pmcmc_run, burnin = n_burnin, thin = 2)
+parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+parameter_mean_hpd
+
+mcmc1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars))
+summary(mcmc1)
+plot(mcmc1)
+
+
+
