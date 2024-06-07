@@ -58,14 +58,14 @@ filter$run(pars)
 # 
 # var(x)
 # # [1] 266.5598
-# 69 / 267 # whyy they choose 69? Assume if we set var = 69, how many particles are needed?
+# 69 / 267 # Trial 69 particles for 267 var; how many particles are needed?
 # # [1] 0.258427
-# 69  / 4
+# 69  / 4 # change by the factor of 4
 # # [1] 17.25
 # 69  / 4  /4
 # # [1] 4.3125
 # 69  / 4  /4 /4
-# # [1] 1.078125
+# # [1] 1.078125 # so the factor is 4*4*4 to finally get roughly 1 particle
 # 4 * 4 * 4
 # # [1] 64
 # 4 * 4 * 4 * 500
@@ -86,7 +86,10 @@ n_burnin <- n_steps/2
 # Use deterministic model by add filter_deterministic
 # https://mrc-ide.github.io/mcstate/articles/deterministic.html
 # Index function is optional when only a small number of states are used in comparison function.
-control <- mcstate::pmcmc_control(n_steps = n_steps, progress = TRUE)
+control <- mcstate::pmcmc_control(n_steps = n_steps,
+                                  rerun_every = 50,
+                                  rerun_random = TRUE,
+                                  progress = TRUE)
 filter_deterministic <- mcstate::particle_deterministic$new(data = sir_data,
                                                             model = gen_sir,
                                                             compare = case_compare
