@@ -19,5 +19,5 @@ vignettes/*.html
 inst/web
 
 # Additional info I don't want to upload the data into gitHub
-raw_data/*.csv
-raw_data/*.xlsx
+raw_data/
+hipercow/

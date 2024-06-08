@@ -54,7 +54,7 @@ prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   
 }
 
-prepare_priors <- function(pars){
+prepare_priors <- function(pars) {
   priors <- list()
   
   priors$time_shift <- function(s) {
@@ -76,4 +76,26 @@ prepare_priors <- function(pars){
     dgamma(s, shape = 1, scale = 1, log = TRUE)
   }
   priors
+}
+
+pmcmc_further_process <- function(n_steps, pmcmc_result) {
+  processed_chains <- mcstate::pmcmc_thin(pmcmc_result, burnin = n_steps/2, thin = 2)
+  parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+  parameter_mean_hpd
+  
+  mcmc1 <- coda::as.mcmc(cbind(pmcmc_result$probabilities, pmcmc_result$pars))
+  mcmc1
+}
+
+ess_calculation <- function(mcmc1){
+  calc <- list(ess = coda::effectiveSize(mcmc1),
+              acceptance_rate = 1 - coda::rejectionRate(mcmc1))
+  calc
+}
+
+pmcmc_trace <- function(mcmc1) {
+  plot(mcmc1) # to save the figures into pdf
+  # png("pictures/mcmc1.png", res = 1200)
+  # plot(mcmc1)
+  # dev.off()
 }

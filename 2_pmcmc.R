@@ -1,6 +1,7 @@
 # 2. Data Fitting ##############################################################
 library(mcstate)
 library(coda)
+library(dust)
 
 source("global/all_function.R") # Collected functions stored here!
 
@@ -72,60 +73,74 @@ filter$run(pars)
 # 4 * 4 * 4 * 500
 # # [1] 32000 --> particles needed for var(x) = 1
 
-n_particles <- 50 # Update n_particles based on calculation in 4 cores with var(x) ~ 267: 32000
+# Update n_particles based on calculation in 4 cores with var(x) ~ 267: 32000
 
 priors <- prepare_priors(pars)
-proposal_matrix <- matrix(69, nrow = 6, ncol = 6)
+proposal_matrix <- diag(1, 6)
 rownames(proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
 colnames(proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
 
 mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = proposal_matrix, transform = transform)
 
-n_steps <- 100 #1e6
-n_burnin <- n_steps/2
+# n_steps <- 100 #1e6
 
 # Use deterministic model by add filter_deterministic
 # https://mrc-ide.github.io/mcstate/articles/deterministic.html
 # Index function is optional when only a small number of states are used in comparison function.
-control <- mcstate::pmcmc_control(n_steps = n_steps,
-                                  rerun_every = 50,
-                                  rerun_random = TRUE,
-                                  progress = TRUE)
 filter_deterministic <- mcstate::particle_deterministic$new(data = sir_data,
                                                             model = gen_sir,
                                                             compare = case_compare
                                                             # index = index
 )
 
+# I change pmcmc_run into a function that involve control inside:
+# pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter_deterministic, control = control)
 
-# The pmcmc run by using Hipercow! #############################################
-# https://mrc-ide.github.io/hipercow/articles/windows.html
-library(hipercow)
-# sudo mount -a
+# Directory for saving the outputs
+# dir.create("outputs", FALSE, TRUE)
 
-windows_authenticate()
-windows_check()
+pmcmc_run <- function(n_particles, n_steps){
+  filter <- mcstate::particle_filter$new(data = sir_data,
+                                         model = gen_sir, # Use odin.dust input
+                                         n_particles = n_particles,
+                                         compare = case_compare,
+                                         seed = 1L)
+  
+  control <- mcstate::pmcmc_control(n_steps = n_steps,
+                                    rerun_every = 50,
+                                    rerun_random = TRUE,
+                                    progress = TRUE)
+  
+  # The pmcmc
+  pmcmc_result <- mcstate::pmcmc(mcmc_pars, filter_deterministic, control = control)
+  pmcmc_result
+  saveRDS(pmcmc_result, "outputs/pmcmc_result.rds")
+  
+  new_proposal_mtx <- cov(pmcmc_result$pars)
+  write.csv(new_proposal_mtx, "outputs/new_proposal_mtx.csv", row.names = TRUE)
+  
+  lpost_max <- which.max(pmcmc_result$probabilities[, "log_posterior"])
+  write.csv(as.list(pmcmc_result$pars[lpost_max, ]),
+            "outputs/initial.csv", row.names = FALSE)
+  
+  # Further processing for thinning chains
+  mcmc1 <- pmcmc_further_process(n_steps, pmcmc_result)
+  write.csv(mcmc1, "outputs/mcmc1.csv", row.names = TRUE)
+  
+  # Calculating ESS & Acceptance Rate
+  calc_ess <- ess_calculation(mcmc1)
+  write.csv(calc_ess, "outputs/calc_ess.csv", row.names = TRUE)
+  
+  # Figures! (still failed, margin error)
+  fig <- pmcmc_trace(mcmc1)
+  
+}
 
-# See filesystems and paths, CHANGE wd to those in /etc/fstab
-setwd("/home/ron/net/home")
-
-hipercow_init(driver = "windows")
-hipercow_configure("windows", r_version = "4.4.0")
-windows_check()
-hipercow_configuration()
-
-hipercow_hello()
-
-pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter_deterministic, control = control)
+# Test
+# pmcmc_run_result <- pmcmc_run(10, 100)
 
 
-processed_chains <- mcstate::pmcmc_thin(pmcmc_run, burnin = n_burnin, thin = 2)
-parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
-parameter_mean_hpd
 
-mcmc1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars))
-summary(mcmc1)
-plot(mcmc1)
 
 
 
