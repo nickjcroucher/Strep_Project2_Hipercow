@@ -12,25 +12,9 @@ case_compare <- function(state, observed, pars = NULL) {
 # That transform function
 # https://github.com/mrc-ide/mcstate/blob/da9f79e4b5dd421fd2e26b8b3d55c78735a29c27/tests/testthat/test-if2.R#L40
 # https://github.com/mrc-ide/mcstate/issues/184
-parameter_transform <- function(pars) {
-  time_shift <- pars[["time_shift"]]
-  beta_0 <- pars[["beta_0"]]
-  beta_1 <- pars[["beta_1"]]
-  wane <- pars[["wane"]]
-  log_delta <- pars[["log_delta"]]
-  sigma_2 <- pars[["sigma_2"]]
-  
-  list(time_shift = time_shift,
-       beta_0 = beta_0,
-       beta_1 = beta_1,
-       wane = wane,
-       log_delta = log_delta,
-       sigma_2 = sigma_2)
-  
-}
-
 transform <- function(pars) {
-  parameter_transform(pars)
+  pars <- as.list(pars)
+  pars
 }
 
 prepare_parameters <- function(initial_pars, priors, proposal, transform) {
