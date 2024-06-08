@@ -4,14 +4,12 @@
 library(hipercow)
 # sudo mount -a
 
-windows_authenticate()
-windows_check()
-
 # See filesystems and paths, CHANGE wd to those in /etc/fstab
-# setwd("/home/ron/net/home")
+# DO NOT CHANGE THE ARRANGEMENT OF THESE LINES BELOW!!!
 
 hipercow_init(driver = "windows")
 hipercow_configure("windows", r_version = "4.4.0")
+windows_authenticate() # authenticate by using DIDE account
 windows_check()
 hipercow_configuration() # for troubleshooting
 # hipercow_hello() # test job
@@ -23,7 +21,15 @@ hipercow_environment_create(name = "mcState_Model",
                             check = T, # check if error occurs
                             root = "/home/ron/net/home/Strep_Project2_Hipercow"
                             )
-hipercow_provision()
+hipercow_provision(environment = "mcState_Model",
+                   root = "/home/ron/net/home/Strep_Project2_Hipercow")
+
+# Check the installed packages again by using hipercow_configuration()
+hipercow_configuration()
+
+# If automatic install failed (don't know why), use pkgdepends.txt!
+# install.packages("pkgdepends")
+# hipercow_provision()
 
 # https://mrc-ide.github.io/hipercow/reference/hipercow_resources.html
 resources <- hipercow::hipercow_resources(cores = 20,

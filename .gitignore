@@ -21,3 +21,4 @@ inst/web
 # Additional info I don't want to upload the data into gitHub
 raw_data/
 hipercow/
+renv/

@@ -1,6 +1,7 @@
 # 2. Data Fitting ##############################################################
 library(mcstate)
 library(coda)
+library(odin.dust)
 library(dust)
 
 source("global/all_function.R") # Collected functions stored here!

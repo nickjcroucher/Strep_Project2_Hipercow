@@ -1,0 +1,11 @@
+repo::https://ncov-ic.r-universe.dev
+repo::https://cloud.r-project.org
+
+tidyverse
+readxl
+
+drat
+mcstate
+odin.dust
+coda
+dust
