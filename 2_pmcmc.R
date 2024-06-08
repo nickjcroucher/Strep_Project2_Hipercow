@@ -98,7 +98,7 @@ filter_deterministic <- mcstate::particle_deterministic$new(data = sir_data,
 # pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter_deterministic, control = control)
 
 # Directory for saving the outputs
-# dir.create("outputs", FALSE, TRUE)
+dir.create("outputs", FALSE, TRUE)
 
 pmcmc_run <- function(n_particles, n_steps){
   filter <- mcstate::particle_filter$new(data = sir_data,

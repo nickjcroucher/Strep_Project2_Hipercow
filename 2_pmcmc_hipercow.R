@@ -56,9 +56,9 @@ task_info(id_single)
 
 # Trial parallel job submission:
 id_parallel <- task_create_expr(
-  parallel::clusterApply(NULL, 1:20, pmcmc_run(500, 100),
+  parallel::clusterApply(cl = NULL, 1:20, function(i, j) pmcmc_run(500, 100),
     c(Sys.getpid(), hipercow_parallel_get_cores()),
-    parallel = hipercow_parallel("parallel"),
+    parallel = parallel,
     resources = resources))
 
 # Something related to test the submitted job
@@ -68,8 +68,8 @@ task_log_show(id_parallel)
 task_info(id_parallel)
 
 # Something related to test the submitted job
-# id <- task_create_expr(sessionInfo())
-task_status(id)
-task_result(id)
-task_log_show(id)
-task_info(id)
+# # id <- task_create_expr(sessionInfo())
+# task_status(id)
+# task_result(id)
+# task_log_show(id)
+# task_info(id)
