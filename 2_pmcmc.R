@@ -140,8 +140,3 @@ pmcmc_run <- function(n_particles, n_steps){
 # Test
 # pmcmc_run_result <- pmcmc_run(10, 100)
 
-
-
-
-
-
