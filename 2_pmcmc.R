@@ -16,7 +16,7 @@ source("global/all_function.R") # Collected functions stored here!
 
 # To make my life easier I compile the Serotype 1 cases into a new object called sir_data
 # data is fed as an input to mcstate::particle_filter_data
-incidence <- read.csv("inputs/incidence_toyData.csv")
+incidence <- read.csv("inputs/incidence.csv")
 
 dt <- 1 # rate must be an integer; 0.25 to make it 4 days, I make it 1
 sir_data <- mcstate::particle_filter_data(data = incidence,
