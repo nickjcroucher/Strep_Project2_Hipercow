@@ -129,6 +129,7 @@ incidence <- Natm_n_imD %>%
   dplyr::select(day, counts_Ser1) %>% 
   dplyr::rename(cases = counts_Ser1) # That annoying name
 
+dir.create("inputs")
 write.csv(incidence, "inputs/incidence.csv", row.names = FALSE)
 
 png("pictures/hist_daily_cases.png", width = 17, height = 12, unit = "cm", res = 1200)

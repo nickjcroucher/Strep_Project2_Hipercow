@@ -22,3 +22,6 @@ inst/web
 raw_data/
 hipercow/
 renv/
+outputs/
+outputs_compiled/
+

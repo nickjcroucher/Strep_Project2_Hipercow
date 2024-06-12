@@ -16,7 +16,7 @@ source("global/all_function.R") # Collected functions stored here!
 
 # To make my life easier I compile the Serotype 1 cases into a new object called sir_data
 # data is fed as an input to mcstate::particle_filter_data
-incidence <- read.csv("inputs/incidence.csv")
+incidence <- read.csv("inputs/incidence_toyData.csv")
 
 dt <- 1 # rate must be an integer; 0.25 to make it 4 days, I make it 1
 sir_data <- mcstate::particle_filter_data(data = incidence,
@@ -36,9 +36,9 @@ gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
 
 # This is part of sir odin model:
 pars <- list(A_ini = 6e7*(2e-6), # S_ini*(2e-6) = 120 people,
-             time_shift = 0.2,
-             beta_0 = 0.06565,
-             beta_1 = 0.07,
+             time_shift = 0.1, # in toy data the real value of timeshift = 0.2
+             beta_0 = 0.16565, # in toy data the real value of beta_0 = 0.36565
+             beta_1 = 0.05, # in toy data the real value of beta_1 = 0.07
              wane = 0.002,
              log_delta = (-4.98), # will be fitted to logN(-7, 0.7)
              sigma_2 = 1

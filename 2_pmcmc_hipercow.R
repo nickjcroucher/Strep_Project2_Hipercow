@@ -20,7 +20,7 @@ hipercow_environment_create(name = "mcState_Model",
                             overwrite = T,
                             check = T, # check if error occurs
                             root = "/home/ron/net/home/Strep_Project2_Hipercow"
-                            )
+)
 hipercow_provision(environment = "mcState_Model",
                    root = "/home/ron/net/home/Strep_Project2_Hipercow")
 
@@ -35,7 +35,7 @@ hipercow_configuration()
 resources <- hipercow::hipercow_resources(cores = 20,
                                           max_runtime = "3d",
                                           memory_per_node = "64G",
-                                          )
+)
 
 # https://mrc-ide.github.io/hipercow/reference/hipercow_parallel.html
 parallel <- hipercow::hipercow_parallel(method = "parallel",
@@ -44,9 +44,9 @@ parallel <- hipercow::hipercow_parallel(method = "parallel",
 
 # Now pmcmc_run is a function:
 # pmcmc_run <- function(n_particles, n_steps)
-id_single <- task_create_expr(pmcmc_run(40000, 1e6), # Update n_particles = 32000, n_steps = 1e6?
-                       resources = resources
-                       )
+id_single <- task_create_expr(pmcmc_run(40000, 10), # Update n_particles = 32000, n_steps = 1e6?
+                              resources = resources
+)
 
 # Something related to test the submitted job
 task_status(id_single)
@@ -57,9 +57,9 @@ task_info(id_single)
 # Trial parallel job submission:
 id_parallel <- task_create_expr(
   parallel::clusterApply(cl = NULL, 1:20, function(i, j) pmcmc_run(500, 100),
-    c(Sys.getpid(), hipercow_parallel_get_cores()),
-    parallel = parallel,
-    resources = resources))
+                         c(Sys.getpid(), hipercow_parallel_get_cores()),
+                         parallel = parallel,
+                         resources = resources))
 
 # Something related to test the submitted job
 task_status(id_parallel)

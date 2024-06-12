@@ -2,11 +2,22 @@
 case_compare <- function(state, observed, pars = NULL) {
   exp_noise <- 1e4
   
-  incidence_modelled <- state[6, , drop = TRUE] # (incidence based on model's "n_AD_daily" from gen_sir)
+  # incidence based on model's "n_AD_daily" from gen_sir
+  incidence_modelled <- state[6, , drop = TRUE]
+  
+  # incidence based on data
   incidence_observed <- observed$cases # daily new cases
-  lamb <- incidence_modelled +
-    rexp(n = length(incidence_modelled), rate = exp_noise)
-  dpois(x = incidence_observed, lambda = lamb, log = TRUE)
+  
+  if (is.na(observed$cases)) {
+    loglik_cases <- numeric(n)
+    
+  } else {
+    n <- ncol(state)
+    lamb <- incidence_modelled + rexp(n, exp_noise)
+    loglik_cases <- dpois(x = incidence_observed, lambda = lamb)
+    
+  }
+  
 }
 
 # That transform function
@@ -20,11 +31,11 @@ transform <- function(pars) {
 prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   
   mcmc_pars <- mcstate::pmcmc_parameters$new(
-    list(mcstate::pmcmc_parameter("time_shift", 0.2, min = 0, max = 1,
+    list(mcstate::pmcmc_parameter("time_shift", 0.1, min = 0, max = 1,
                                   prior = function(s) dunif(s, min = 0, max = 1, log = TRUE)), # ~Uniform[0,1] in the proportion of 365 days
-         mcstate::pmcmc_parameter("beta_0", 0.06565, min = 0, max = 0.8,
+         mcstate::pmcmc_parameter("beta_0", 0.16565, min = 0, max = 0.8,
                                   prior = function(s) dgamma(s, shape = 1, scale = 0.1, log = TRUE)), # draws from gamma distribution dgamma(1, 0.2) --> exp dist)
-         mcstate::pmcmc_parameter("beta_1", 0.07, min = 0, max = 0.8,
+         mcstate::pmcmc_parameter("beta_1", 0.05, min = 0, max = 0.8,
                                   prior = function(s) dgamma(s, shape = 1, scale = 0.1, log = TRUE)), # draws from gamma distribution dgamma(1, 0.2) --> exp dist
          mcstate::pmcmc_parameter("wane", 0.002, min = 0, max = 0.8,
                                   prior = function(s) dgamma(s, shape = 1, scale = 0.1, log = TRUE)), # draws from gamma distribution dgamma(1, 0.2) --> exp dist
@@ -73,7 +84,7 @@ pmcmc_further_process <- function(n_steps, pmcmc_result) {
 
 ess_calculation <- function(mcmc1){
   calc <- list(ess = coda::effectiveSize(mcmc1),
-              acceptance_rate = 1 - coda::rejectionRate(mcmc1))
+               acceptance_rate = 1 - coda::rejectionRate(mcmc1))
   calc
 }
 
