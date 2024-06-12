@@ -1,0 +1,99 @@
+Weird Hipercow Notes
+Update: Wed, 12/06/2024
+
+Content:
+1. Weird environment create
+2.
+
+
+#################################################################################################
+1. Weird environment create
+Personal notes:
+I wanna make a clean environment, name it, and install some packages. It always failed (I've tried this since weekend)
+hipercow_environment_create(name = "mcState_Model",
+                            sources = c("1_data_preparation.R", "2_pmcmc.R"),
+                            globals = "global/all_function.R",
+                            overwrite = T,
+                            check = T, # check if error occurs
+                            root = "/home/ron/net/home/Strep_Project2_Hipercow"
+)
+hipercow_provision(environment = "mcState_Model",
+                   root = "/home/ron/net/home/Strep_Project2_Hipercow"
+                   )
+
+
+Oddly enough, this one is working nicely:
+> hipercow_environment_create(sources = "2_pmcmc.R")
+✔ Updated environment 'default'
+> hipercow_provision()
+ℹ Looking for active tasks before installation
+✔ No tasks running
+✔ Selected provisioning method 'pkgdepends'
+/`-'\  _______  ___  ___ ____
+\,T./ / __/ _ \/ _ \/ _ `/ _ \
+  |   \__/\___/_//_/\_,_/_//_/
+  |   ---- THE  LIBRARIAN ----
+
+Bootstrapping from: I:/bootstrap/4.4.0
+Installing into library: hipercow/lib/windows/4.4.0
+Using method pkgdepends
+Running in path: V:/Strep_Project2_Hipercow
+Library paths:
+  - V:/Strep_Project2_Hipercow/hipercow/lib/windows/4.4.0
+  - C:/Program Files/R/R-4.4.0/library
+id: 20240612184000
+Logs from pkgdepends follow:
+
+-------------------------------------------------------------------------------
+
+
+── repos 
+• https://ncov-ic.r-universe.dev
+• https://cloud.r-project.org
+• https://cloud.r-project.org
+
+── refs 
+• tidyverse
+• readxl
+• drat
+• mcstate
+• odin.dust
+• coda
+• dust
+ℹ Loading metadata database
+✔ Loading metadata database ... done
+
+ℹ No downloads are needed
+✔ Summary:   121 kept  in 0ms
+
+-------------------------------------------------------------------------------
+Writing library description to 'hipercow/lib/windows/4.4.0/.conan/20240612184000'
+Done!
+✔ Installation script finished successfully in 11.63 secs
+> resources <- hipercow::hipercow_resources(cores = 20,
++                                           max_runtime = "3d",
++                                           memory_per_node = "64G",
++ )
+> 
+> # Now pmcmc_run is a function:
+> # pmcmc_run <- function(n_particles, n_steps)
+> id_single <- task_create_expr(pmcmc_run(40000, 10), # Update n_particles = 32000, n_steps = 1e6?
++                               resources = resources
++ )
+✔ Submitted task '3d4e115be9bd4f60b7054aba4cab2be8' using 'windows'
+> 
+> # Something related to test the submitted job
+> task_status(id_single)
+[1] "submitted"
+> task_status(id_single)
+[1] "success"
+
+
+
+Questions:
+1. It seems like my program run nicely based on default environment (modified by source = "2_pmcmc.R"), but failed to run when I define my own environment.
+Whyy? Is that also means that my job is run based on default environment instead of a specific environment that I'd generated before?
+2. So, I think the best option is just compile all of the required outputs into 1 file? (I also tried sources = c("1_data_preparation.R", "2_pmcmc.R"), it seems like hipercow is confused and tried to run "1_data_preparation.R" first).
+
+
+#################################################################################################

@@ -5,7 +5,7 @@ library(hipercow)
 # sudo mount -a
 
 # See filesystems and paths, CHANGE wd to those in /etc/fstab
-# DO NOT CHANGE THE ARRANGEMENT OF THESE LINES BELOW!!!
+# DO NOT CHANGE THE ARRANGEMENT OF THESE COMMANDS!!!
 
 hipercow_init(driver = "windows")
 hipercow_configure("windows", r_version = "4.4.0")
@@ -14,18 +14,11 @@ windows_check()
 hipercow_configuration() # for troubleshooting
 # hipercow_hello() # test job
 
-hipercow_environment_create(name = "mcState_Model",
-                            sources = c("1_data_preparation.R", "2_pmcmc.R"),
-                            globals = "global/all_function.R",
-                            overwrite = T,
-                            check = T, # check if error occurs
-                            root = "/home/ron/net/home/Strep_Project2_Hipercow"
-)
-hipercow_provision(environment = "mcState_Model",
-                   root = "/home/ron/net/home/Strep_Project2_Hipercow")
+hipercow_environment_create(sources = "2_pmcmc.R")
+hipercow_provision()
 
 # Check the installed packages again by using hipercow_configuration()
-hipercow_configuration()
+# hipercow_configuration()
 
 # If automatic install failed (don't know why), use pkgdepends.txt!
 # install.packages("pkgdepends")
