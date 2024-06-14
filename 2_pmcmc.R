@@ -35,12 +35,12 @@ rmarkdown::paged_table(sir_data)
 gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
 
 # This is part of sir odin model:
-pars <- list(A_ini = (2e-6), # S_ini*(2e-6) = 120 people,
-             time_shift = 0.1, # in toy data the real value of timeshift = 0.2
-             beta_0 = 0.16565, # in toy data the real value of beta_0 = 0.36565
-             beta_1 = 0.05, # in toy data the real value of beta_1 = 0.07
+pars <- list(log_A_ini = (-5.69897), # S_ini*10^(log10(-5.69897)) = 120 people; change A_ini into log10(A_ini)
+             time_shift = 0.2,
+             beta_0 = 0.06565,
+             beta_1 = 0.07, # in toy data the real value of beta_1 = 0.07
              wane = 0.002,
-             log_delta = (-4.98), # will be fitted to logN(-7, 0.7)
+             log_delta = (-4.98),
              sigma_2 = 1
 ) # Serotype 1 is categorised to have the lowest carriage duration
 
@@ -77,9 +77,9 @@ filter$run(pars)
 # Update n_particles based on calculation in 4 cores with var(x) ~ 267: 32000
 
 priors <- prepare_priors(pars)
-proposal_matrix <- diag(1, 6)
-rownames(proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
-colnames(proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+proposal_matrix <- diag(1, 7)
+rownames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+colnames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
 
 mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = proposal_matrix, transform = transform)
 
@@ -144,8 +144,8 @@ pmcmc_tuning <- function(n_particles, n_steps){
   new_proposal_matrix <- new_proposal_matrix[, -1]
   new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
   new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
-  rownames(new_proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
-  colnames(new_proposal_matrix) <- c("time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
   # isSymmetric(new_proposal_matrix)
   
   tune_mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = new_proposal_matrix, transform = transform)

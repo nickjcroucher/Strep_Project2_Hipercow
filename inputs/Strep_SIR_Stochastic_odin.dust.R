@@ -3,9 +3,9 @@ library(odin.dust)
 gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
 
 # Running the SIR model with dust
-pars <- list(A_ini = 6e7*(2e-6), # S_ini*(2e-6) = 120 people, 
+pars <- list(log_A_ini = (-5.69897), # S_ini*10^(log10(-5.69897)) = 120 people; change A_ini into log10(A_ini)
              time_shift = 0.2,
-             beta_0 = 0.36565,
+             beta_0 = 0.06565,
              beta_1 = 0.07,
              wane = 0.002,
              log_delta = (-4.98), # will be fitted to logN(-10, 0.7)
@@ -86,4 +86,4 @@ glimpse(new_toyData)
 incidence <- tibble(day = 1:4745) %>% 
   bind_cols(new_toyData)
 
-write.csv(incidence, file="inputs/incidence_toyData.csv", row.names =F)
+# write.csv(incidence, file="inputs/incidence_toyData.csv", row.names =F)

@@ -42,15 +42,17 @@ transform <- function(pars) {
 prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   
   mcmc_pars <- mcstate::pmcmc_parameters$new(
-    list(mcstate::pmcmc_parameter("time_shift", 0.1, min = 0, max = 1,
-                                  prior = priors$time_shift), # ~Uniform[0,1] in the proportion of 365 days
-         mcstate::pmcmc_parameter("beta_0", 0.16565, min = 0, max = 0.8,
+    list(mcstate::pmcmc_parameter("log_A_ini", (-5.69897), min = -7, max = 0,
+                                  prior = priors$log_A_ini),
+         mcstate::pmcmc_parameter("time_shift", 0.1, min = 0, max = 0.5,
+                                  prior = priors$time_shift), # ~Uniform[0,0.5] in the proportion of 365 days
+         mcstate::pmcmc_parameter("beta_0", 0.06565, min = 0, max = 0.8,
                                   prior = priors$beta_0), # draws from gamma distribution dgamma(1, 0.2) --> exp dist)
-         mcstate::pmcmc_parameter("beta_1", 0.05, min = 0, max = 0.8,
+         mcstate::pmcmc_parameter("beta_1", 0.07, min = 0, max = 0.8,
                                   prior = priors$beta_1), # draws from gamma distribution dgamma(1, 0.2) --> exp dist
          mcstate::pmcmc_parameter("wane", 0.002, min = 0, max = 0.8,
                                   prior = priors$wane), # draws from gamma distribution dgamma(1, 0.2) --> exp dist
-         mcstate::pmcmc_parameter("log_delta", (-4.7), min = (-10), max = 0.7,
+         mcstate::pmcmc_parameter("log_delta", (-4.98), min = (-8), max = 0.7,
                                   prior = priors$log_delta), # logN distribution for children & adults (Lochen et al., 2022)
          mcstate::pmcmc_parameter("sigma_2", 1, min = 0, max = 10,
                                   prior = priors$sigma_2) # shape = 1 , scale = 1 to capture 5 days/more (or dgamma(2.5, 0.5))?
@@ -63,6 +65,9 @@ prepare_parameters <- function(initial_pars, priors, proposal, transform) {
 prepare_priors <- function(pars) {
   priors <- list()
   
+  priors$log_A_ini <- function(s) {
+    dnorm(s, mean = (-5), sd = 1, log = TRUE)
+  }
   priors$time_shift <- function(s) {
     dunif(s, min = 0, max = 1, log = TRUE)
   }
@@ -79,7 +84,7 @@ prepare_priors <- function(pars) {
     dunif(s, min = (-10), max = 0.7, log = TRUE)
   }
   priors$sigma_2 <- function(s) {
-    dgamma(s, shape = 1, scale = 1, log = TRUE)
+    dgamma(s, shape = 1, scale = 0.1, log = TRUE)
   }
   priors
 }
