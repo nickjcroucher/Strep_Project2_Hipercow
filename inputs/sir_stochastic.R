@@ -7,7 +7,7 @@ initial(time) <- 0
 
 # 1. PARAMETERS ################################################################
 S_ini <- user(6e7) # FIXED England's pop size is roughly 67,000,000
-A_ini <- user(0) # S_ini*(2e-6) = 120 people, 
+A_ini <- user(2e-6) # S_ini*(2e-6) = 120 people, 
 D_ini <- user(0) 
 time_shift <- user(0)
 beta_0 <- user(0)
@@ -38,7 +38,7 @@ pi <- user(3.141593) # FIXED
 
 # 2. INITIAL VALUES ############################################################
 initial(S) <- S_ini
-initial(A) <- A_ini
+initial(A) <- A_ini*S_ini
 initial(D) <- D_ini
 initial(R) <- 0
 initial(n_AD_daily) <- 0
