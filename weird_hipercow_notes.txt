@@ -3,7 +3,14 @@ Update: Wed, 12/06/2024
 
 Content:
 1. Weird environment create
-2.
+2. Parallelisation
+
+
+Informations related to Hipercow!
+
+Manage data or GET ids from:
+https://mrcdata.dide.ic.ac.uk/hpc
+See Manage Jobs
 
 
 #################################################################################################
@@ -97,3 +104,43 @@ Whyy? Is that also means that my job is run based on default environment instead
 
 
 #################################################################################################
+2. Parallelisation
+
+> id_parallel <- task_create_expr(pmcmc_tuning(40000, 100),
++                                 driver = "windows",
++                                 parallel::clusterApply(cl = cl, 1:20, function(x) Sys.sleep(5)),
++                                 c(Sys.getpid(), hipercow_parallel_get_cores()),
++                                 parallel = parallel,
++                                 resources = resources)
+Error:
+! 'name' must be a scalar
+Run `rlang::last_trace()` to see where the error occurred.
+> rlang::last_trace()
+<error/rlang_error>
+Error:
+! 'name' must be a scalar
+---
+Backtrace:
+    ▆
+ 1. └─hipercow::task_create_expr(...)
+ 2.   └─hipercow:::parallel_validate(...)
+ 3.     └─hipercow:::ensure_environment_exists(...)
+ 4.       └─hipercow:::assert_scalar_character(name)
+ 5.         └─hipercow:::assert_scalar(x, name, call)
+Run rlang::last_trace(drop = FALSE) to see 2 hidden frames.
+> rlang::last_trace(drop = FALSE)
+<error/rlang_error>
+Error:
+! 'name' must be a scalar
+---
+Backtrace:
+    ▆
+ 1. └─hipercow::task_create_expr(...)
+ 2.   └─hipercow:::parallel_validate(...)
+ 3.     └─hipercow:::ensure_environment_exists(...)
+ 4.       └─hipercow:::assert_scalar_character(name)
+ 5.         └─hipercow:::assert_scalar(x, name, call)
+ 6.           └─cli::cli_abort("'{name}' must be a scalar", call = NULL)
+ 7.             └─rlang::abort(...)
+
+

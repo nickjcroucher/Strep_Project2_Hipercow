@@ -2,8 +2,8 @@
 case_compare <- function(state, observed, pars = NULL) {
   exp_noise <- 1e4
   
-  # incidence based on model's "n_SI_daily" from gen_sir$new(pars = list(), time = 0, n_particles = 1L)$info()
-  incidence_modelled <- state[5, , drop = TRUE] # n_SI_daily is located at state[5, , ]
+  # incidence based on model's "n_AD_daily" from gen_sir$new(pars = list(), time = 0, n_particles = 1L)$info()
+  incidence_modelled <- state[6, , drop = TRUE] # n_AD_daily is located at state[6, , ]
   
   # incidence based on data
   incidence_observed <- observed$cases # daily new cases
@@ -19,6 +19,7 @@ case_compare <- function(state, observed, pars = NULL) {
 # https://github.com/mrc-ide/mcstate/blob/da9f79e4b5dd421fd2e26b8b3d55c78735a29c27/tests/testthat/test-if2.R#L40
 # https://github.com/mrc-ide/mcstate/issues/184
 parameter_transform <- function(pars) {
+  log_A_ini <- pars[["log_A_ini"]]
   time_shift <- pars[["time_shift"]]
   beta_0 <- pars[["beta_0"]]
   beta_1 <- pars[["beta_1"]]
@@ -26,7 +27,8 @@ parameter_transform <- function(pars) {
   log_delta <- pars[["log_delta"]]
   sigma_2 <- pars[["sigma_2"]]
   
-  list(time_shift = time_shift,
+  list(log_A_ini = log_A_ini,
+       time_shift = time_shift,
        beta_0 = beta_0,
        beta_1 = beta_1,
        wane = wane,
