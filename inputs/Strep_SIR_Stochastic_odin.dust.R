@@ -66,7 +66,7 @@ matplot(time, t(x[5, , ]), type = "l",
         xlab = "Time", ylab = "Number of individuals",
         col = cols[["n_AD_daily"]], lty = 1)#, ylim = max(x[2,,]))
 
-# matlines(incidence$day, incidence$cases, type = "l", col = "steelblue")
+matlines(incidence$day, incidence$cases, type = "l", col = "steelblue")
 
 # matlines(time, t(x[2, , ]), col = cols[["A"]], lty = 1)
 # matlines(time, t(x[3, , ]), col = cols[["D"]], lty = 1)

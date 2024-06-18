@@ -281,7 +281,7 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   # write.csv(new_proposal_mtx, "outputs/new_proposal_mtx.csv", row.names = TRUE)
   
   tune_lpost_max <- which.max(tune_pmcmc_result$probabilities[, "log_posterior"])
-  write.csv(as.list(tune_pmcmc_result$pars[, ]),#lpost_max, ]),
+  write.csv(as.list(tune_pmcmc_result$pars[tune_lpost_max, ]),
             "outputs/tune_initial.csv", row.names = FALSE)
   
   # Further processing for thinning chains

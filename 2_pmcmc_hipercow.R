@@ -59,7 +59,7 @@ task_info(id_tuning)
 task_info(id_tuning)$times
 
 ################################################################################
-id_single_plus_tuning <- task_create_expr(pmcmc_run_plus_tuning(40000, 1e2), # Update n_particles = 32000, n_steps = 1e6?
+id_single_plus_tuning <- task_create_expr(pmcmc_run_plus_tuning(40000, 5e3), # Update n_particles = 32000, n_steps = 1e6?
                                           resources = resources
 )
 
