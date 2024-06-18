@@ -6,8 +6,8 @@ dt <- 1/freq
 initial(time) <- 0
 
 # 1. PARAMETERS ################################################################
-S_ini <- user(6e7) # FIXED England's pop size is roughly 67,000,000
-log_A_ini <- user(-5.69897) # S_ini*10^(log10(-5.69897)) = 120 people; change A_ini into log10(A_ini)
+S_ini <- user(6e7) # 6e7 FIXED England's pop size is roughly 67,000,000
+log_A_ini <- user(0) # S_ini*10^(log10(-5.69897)) = 120 people; change A_ini into log10(A_ini)
 D_ini <- user(0) 
 time_shift <- user(0)
 beta_0 <- user(0)
@@ -31,7 +31,7 @@ UK_calibration <- user(0.8066608) # FIXED (Lochen et al., 2022)
 
 log_delta <- user(0) # required in mcState
 sigma_1 <- user(1/15.75) # FIXED per-day, carriage duration (95% CI 7.88-31.49) (Serotype 1) (Chaguza et al., 2021)
-sigma_2 <- user(1)
+sigma_2 <- user(0)
 mu_0 <- user(0) # background mortality, assumed as closed system
 mu_1 <- user(192/(4064*4745)) # FIXED disease-associated mortality; ratio 192/4064 in 4745 days
 pi <- user(3.141593) # FIXED
