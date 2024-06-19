@@ -23,7 +23,7 @@ parameter_transform <- function(pars) {
   time_shift <- pars[["time_shift"]]
   beta_0 <- pars[["beta_0"]]
   beta_1 <- pars[["beta_1"]]
-  wane <- pars[["wane"]]
+  log_wane <- pars[["log_wane"]]
   log_delta <- pars[["log_delta"]]
   sigma_2 <- pars[["sigma_2"]]
   
@@ -31,7 +31,7 @@ parameter_transform <- function(pars) {
        time_shift = time_shift,
        beta_0 = beta_0,
        beta_1 = beta_1,
-       wane = wane,
+       log_wane = log_wane,
        log_delta = log_delta,
        sigma_2 = sigma_2)
   
@@ -46,18 +46,18 @@ prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   mcmc_pars <- mcstate::pmcmc_parameters$new(
     list(mcstate::pmcmc_parameter("log_A_ini", (-5.69897), min = -7, max = 0,
                                   prior = priors$log_A_ini),
-         mcstate::pmcmc_parameter("time_shift", 0.1, min = 0, max = 0.5,
-                                  prior = priors$time_shift), # ~Uniform[0,0.5] in the proportion of 365 days
+         mcstate::pmcmc_parameter("time_shift", 0.2, min = 0, max = 0.5,
+                                  prior = priors$time_shift),
          mcstate::pmcmc_parameter("beta_0", 0.06565, min = 0, max = 0.8,
-                                  prior = priors$beta_0), # draws from gamma distribution dgamma(1, 0.2) --> exp dist)
+                                  prior = priors$beta_0),
          mcstate::pmcmc_parameter("beta_1", 0.07, min = 0, max = 0.8,
-                                  prior = priors$beta_1), # draws from gamma distribution dgamma(1, 0.2) --> exp dist
-         mcstate::pmcmc_parameter("wane", 0.002, min = 0, max = 0.8,
-                                  prior = priors$wane), # draws from gamma distribution dgamma(1, 0.2) --> exp dist
-         mcstate::pmcmc_parameter("log_delta", (-4.98), min = (-8), max = 0.7,
-                                  prior = priors$log_delta), # logN distribution for children & adults (Lochen et al., 2022)
+                                  prior = priors$beta_1),
+         mcstate::pmcmc_parameter("log_wane", (-2.823909), min = (-8), max = 0.7,
+                                  prior = priors$log_wane),
+         mcstate::pmcmc_parameter("log_delta", (-4.98), min = (-10), max = 0.7,
+                                  prior = priors$log_delta),
          mcstate::pmcmc_parameter("sigma_2", 1, min = 0, max = 10,
-                                  prior = priors$sigma_2) # shape = 1 , scale = 1 to capture 5 days/more (or dgamma(2.5, 0.5))?
+                                  prior = priors$sigma_2)
     ),
     proposal = proposal,
     transform = transform)
@@ -79,14 +79,14 @@ prepare_priors <- function(pars) {
   priors$beta_1 <- function(s) {
     dgamma(s, shape = 1, scale = 0.1, log = TRUE)
   }
-  priors$wane <- function(s) {
-    dgamma(s, shape = 1, scale = 0.1, log = TRUE)
+  priors$log_wane <- function(s) {
+    dunif(s, min = (-8), max = 0.7, log = TRUE)
   }
   priors$log_delta <- function(s) {
     dunif(s, min = (-10), max = 0.7, log = TRUE)
   }
   priors$sigma_2 <- function(s) {
-    dgamma(s, shape = 1, scale = 0.1, log = TRUE)
+    dgamma(s, shape = 1, scale = 1, log = TRUE)
   }
   priors
 }
@@ -120,6 +120,6 @@ tuning_pmcmc_further_process <- function(n_steps, tune_pmcmc_result) {
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
   parameter_mean_hpd
   
-  mcmc_tuning_result <- coda::as.mcmc(cbind(processed_chains$probabilities, processed_chains$pars))
-  mcmc_tuning_result
+  tune_pmcmc_result <- coda::as.mcmc(cbind(processed_chains$probabilities, processed_chains$pars))
+  tune_pmcmc_result
 }

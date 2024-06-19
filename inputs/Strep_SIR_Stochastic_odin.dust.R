@@ -3,11 +3,11 @@ library(odin.dust)
 gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
 
 # Running the SIR model with dust
-pars <- list(log_A_ini = (-5.69897), # S_ini*10^(log10(-5.69897)) = 120 people; change A_ini into log10(A_ini)
+pars <- list(log_A_ini = (-5.69897), # S_ini*10^(-5.69897) = 120 people; change A_ini into log10(A_ini)
              time_shift = 0.2,
              beta_0 = 0.06565,
              beta_1 = 0.07,
-             wane = 0.002,
+             log_wane = (-2.823909),
              log_delta = (-4.98), # will be fitted to logN(-10, 0.7)
              sigma_1 = (1/15.75),
              sigma_2 = (1)

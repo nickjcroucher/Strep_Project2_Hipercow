@@ -39,7 +39,7 @@ pars <- list(log_A_ini = (-5.69897), # S_ini*10^(log10(-5.69897)) = 120 people; 
              time_shift = 0.2,
              beta_0 = 0.06565,
              beta_1 = 0.07, # in toy data the real value of beta_1 = 0.07
-             wane = 0.002,
+             log_wane = (-2.823909),
              log_delta = (-4.98),
              sigma_2 = 1
 ) # Serotype 1 is categorised to have the lowest carriage duration
@@ -79,8 +79,8 @@ filter$run(pars)
 priors <- prepare_priors(pars)
 proposal_matrix <- diag(1, 7)
 proposal_matrix <- (proposal_matrix + t(proposal_matrix)) / 2
-rownames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
-colnames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+rownames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
+colnames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
 
 mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = proposal_matrix, transform = transform)
 
@@ -145,8 +145,8 @@ pmcmc_tuning <- function(n_particles, n_steps){
   new_proposal_matrix <- new_proposal_matrix[, -1]
   new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
   new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
-  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
-  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
+  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
   # isSymmetric(new_proposal_matrix)
   
   tune_mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = new_proposal_matrix, transform = transform)
@@ -254,23 +254,31 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   new_proposal_matrix <- new_proposal_matrix[, -1]
   new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
   new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
-  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
-  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "wane", "log_delta", "sigma_2")
+  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
+  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
   # isSymmetric(new_proposal_matrix)
   
   tune_mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = new_proposal_matrix, transform = transform)
   
+  # Including adaptive proposal control
+  # https://mrc-ide.github.io/mcstate/reference/adaptive_proposal_control.html
   tune_control <- mcstate::pmcmc_control(n_steps = n_steps,
                                          n_chains = 4,
                                          rerun_every = 50,
                                          rerun_random = TRUE,
-                                         progress = TRUE)
+                                         progress = TRUE,
+                                         adaptive_proposal = adaptive_proposal_control(initial_scaling = 1,
+                                                                                       acceptance_target = 0.234,
+                                                                                       adapt_end = Inf
+                                                                                       )
+                                         )
   
   filter <- mcstate::particle_filter$new(data = sir_data,
                                          model = gen_sir, # Use odin.dust input
                                          n_particles = n_particles,
                                          compare = case_compare,
-                                         seed = 1L)
+                                         seed = 1L
+                                         )
   
   # The pmcmc
   tune_pmcmc_result <- mcstate::pmcmc(tune_mcmc_pars, filter_deterministic, control = tune_control)
@@ -286,6 +294,8 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   
   # Further processing for thinning chains
   mcmc2 <- tuning_pmcmc_further_process(n_steps, tune_pmcmc_result)
+  # mcmc2 <- coda::as.mcmc(cbind(
+  #   tune_pmcmc_result$probabilities, tune_pmcmc_result$pars))
   write.csv(mcmc2, "outputs/mcmc2.csv", row.names = TRUE)
   
   # Calculating ESS & Acceptance Rate
@@ -297,4 +307,4 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   
 }
 
-
+pmcmc_run_plus_tuning(40000, 1e3)
