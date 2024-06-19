@@ -92,115 +92,6 @@ mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal =
 # Directory for saving the outputs
 dir.create("outputs", FALSE, TRUE)
 
-pmcmc_run <- function(n_particles, n_steps){
-  filter <- mcstate::particle_filter$new(data = sir_data,
-                                         model = gen_sir, # Use odin.dust input
-                                         n_particles = n_particles,
-                                         compare = case_compare,
-                                         seed = 1L)
-  
-  # Use deterministic model by add filter_deterministic
-  # https://mrc-ide.github.io/mcstate/articles/deterministic.html
-  # Index function is optional when only a small number of states are used in comparison function.
-  filter_deterministic <- mcstate::particle_deterministic$new(data = sir_data,
-                                                              model = gen_sir,
-                                                              compare = case_compare
-                                                              # index = index
-  )
-  
-  control <- mcstate::pmcmc_control(n_steps = n_steps,
-                                    rerun_every = 50,
-                                    rerun_random = TRUE,
-                                    progress = TRUE)
-  
-  # The pmcmc
-  pmcmc_result <- mcstate::pmcmc(mcmc_pars, filter_deterministic, control = control)
-  pmcmc_result
-  saveRDS(pmcmc_result, "outputs/pmcmc_result.rds")
-  
-  new_proposal_mtx <- cov(pmcmc_result$pars)
-  write.csv(new_proposal_mtx, "outputs/new_proposal_mtx.csv", row.names = TRUE)
-  
-  lpost_max <- which.max(pmcmc_result$probabilities[, "log_posterior"])
-  write.csv(as.list(pmcmc_result$pars[lpost_max, ]),
-            "outputs/initial.csv", row.names = FALSE)
-  
-  # Further processing for thinning chains
-  mcmc1 <- pmcmc_further_process(n_steps, pmcmc_result)
-  write.csv(mcmc1, "outputs/mcmc1.csv", row.names = TRUE)
-  
-  # Calculating ESS & Acceptance Rate
-  calc_ess <- ess_calculation(mcmc1)
-  write.csv(calc_ess, "outputs/calc_ess.csv", row.names = TRUE)
-  
-  # Figures! (still failed, margin error)
-  fig <- pmcmc_trace(mcmc1)
-  
-}
-
-# 3. Tuning the pMCMC ##########################################################
-pmcmc_tuning <- function(n_particles, n_steps){
-  # New proposal matrix
-  new_proposal_matrix <- as.matrix(read.csv("outputs/new_proposal_mtx.csv"))
-  new_proposal_matrix <- new_proposal_matrix[, -1]
-  new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
-  new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
-  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
-  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
-  # isSymmetric(new_proposal_matrix)
-  
-  tune_mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = new_proposal_matrix, transform = transform)
-  
-  tune_control <- mcstate::pmcmc_control(n_steps = n_steps,
-                                         n_chains = 4,
-                                         rerun_every = 50,
-                                         rerun_random = TRUE,
-                                         progress = TRUE)
-  
-  filter <- mcstate::particle_filter$new(data = sir_data,
-                                         model = gen_sir, # Use odin.dust input
-                                         n_particles = n_particles,
-                                         compare = case_compare,
-                                         seed = 1L)
-  
-  # Use deterministic model by add filter_deterministic
-  # https://mrc-ide.github.io/mcstate/articles/deterministic.html
-  # Index function is optional when only a small number of states are used in comparison function.
-  filter_deterministic <- mcstate::particle_deterministic$new(data = sir_data,
-                                                              model = gen_sir,
-                                                              compare = case_compare
-                                                              # index = index
-  )
-  
-  # The pmcmc
-  tune_pmcmc_result <- mcstate::pmcmc(tune_mcmc_pars, filter_deterministic, control = tune_control)
-  tune_pmcmc_result
-  saveRDS(tune_pmcmc_result, "outputs/tune_pmcmc_result.rds")
-  
-  # new_proposal_mtx <- cov(pmcmc_result$pars)
-  # write.csv(new_proposal_mtx, "outputs/new_proposal_mtx.csv", row.names = TRUE)
-  
-  tune_lpost_max <- which.max(tune_pmcmc_result$probabilities[, "log_posterior"])
-  write.csv(as.list(tune_pmcmc_result$pars[, ]),#lpost_max, ]),
-            "outputs/tune_initial.csv", row.names = FALSE)
-  
-  # Further processing for thinning chains
-  mcmc2 <- tuning_pmcmc_further_process(n_steps, tune_pmcmc_result)
-  write.csv(mcmc2, "outputs/mcmc2.csv", row.names = TRUE)
-  
-  # Calculating ESS & Acceptance Rate
-  tune_calc_ess <- ess_calculation(mcmc2)
-  write.csv(tune_calc_ess, "outputs/tune_calc_ess.csv", row.names = TRUE)
-  
-  # Figures! (still failed, margin error)
-  fig <- pmcmc_trace(mcmc2)
-  
-}
-
-# Test
-# pmcmc_run_result <- pmcmc_run(10, 100)
-# tuning_run_result <- pmcmc_tuning(10, 100)
-
 # Trial combine pMCMC + tuning #################################################
 pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   filter <- mcstate::particle_filter$new(data = sir_data,
@@ -253,6 +144,7 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   new_proposal_matrix <- as.matrix(read.csv("outputs/new_proposal_mtx.csv"))
   new_proposal_matrix <- new_proposal_matrix[, -1]
   new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
+  new_proposal_matrix <- new_proposal_matrix/10 # Lilith's suggestion
   new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
   rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
   colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
@@ -267,11 +159,11 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
                                          rerun_every = 50,
                                          rerun_random = TRUE,
                                          progress = TRUE,
-                                         adaptive_proposal = adaptive_proposal_control(initial_scaling = 1,
+                                         adaptive_proposal = adaptive_proposal_control(initial_vcv_weight = 800,
+                                                                                       initial_scaling = 1,
                                                                                        acceptance_target = 0.234,
                                                                                        adapt_end = Inf
-                                                                                       )
-                                         )
+                                         ))
   
   filter <- mcstate::particle_filter$new(data = sir_data,
                                          model = gen_sir, # Use odin.dust input
@@ -305,6 +197,16 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   # Figures! (still failed, margin error)
   fig <- pmcmc_trace(mcmc2)
   
+  ##############################################################################
+  # MCMC Diagnostics
+  
+  # 1. Gelman-Rubin Diagnostic
+  # https://cran.r-project.org/web/packages/coda/coda.pdf
+  diag_gelman_rubin(tune_pmcmc_result)
+  
+  # 2. Autocorrelation
+  diag_aucorr(mcmc2)
+  
 }
 
-pmcmc_run_plus_tuning(40000, 1e3)
+# pmcmc_run_plus_tuning(40000, 1e3)

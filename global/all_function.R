@@ -26,14 +26,15 @@ parameter_transform <- function(pars) {
   log_wane <- pars[["log_wane"]]
   log_delta <- pars[["log_delta"]]
   sigma_2 <- pars[["sigma_2"]]
-  
+
   list(log_A_ini = log_A_ini,
        time_shift = time_shift,
        beta_0 = beta_0,
        beta_1 = beta_1,
        log_wane = log_wane,
        log_delta = log_delta,
-       sigma_2 = sigma_2)
+       sigma_2 = sigma_2
+       )
   
 }
 
@@ -123,3 +124,60 @@ tuning_pmcmc_further_process <- function(n_steps, tune_pmcmc_result) {
   tune_pmcmc_result <- coda::as.mcmc(cbind(processed_chains$probabilities, processed_chains$pars))
   tune_pmcmc_result
 }
+
+################################################################################
+# MCMC Diagnostics
+# 1. Gelman-Rubin Diagnostic
+# https://cran.r-project.org/web/packages/coda/coda.pdf
+
+diag_gelman_rubin <- function(tune_pmcmc_result){
+  n_chains <- tune_control$n_chains
+  n_samples <- nrow(tune_pmcmc_result$pars)/n_chains
+  
+  # Split the parameter samples and probabilities by chains
+  chains <- lapply(1:n_chains, function(i) {
+    start <- (i - 1) * n_samples + 1
+    end <- i * n_samples
+    list(
+      pars = tune_pmcmc_result$pars[start:end, ],
+      probabilities = tune_pmcmc_result$probabilities[start:end, ]
+    )
+  })
+  
+  # Convert chains to mcmc objects
+  mcmc_chains <- lapply(chains, function(chain) {
+    as.mcmc(cbind(chain$probabilities, chain$pars))
+  })
+  
+  # Combine chains into a list
+  mcmc_chains_list <- do.call(mcmc.list, mcmc_chains)
+  
+  print("Covariance matrix of mcmc2")
+  cov(as.matrix(mcmc_chains_list))
+  
+  print("Gelman-Rubin diagnostic")
+  coda::gelman.plot(mcmc_chains_list,
+                    bin.width = 10,
+                    max.bins = 50,
+                    confidence = 0.95,
+                    transform = FALSE,
+                    autoburnin=TRUE,
+                    auto.layout = TRUE)
+  # ask, col, lty, xlab, ylab, type, ...)
+  
+  coda::gelman.diag(mcmc_chains_list,
+                    confidence = 0.95,
+                    transform=FALSE,
+                    autoburnin=TRUE,
+                    multivariate=F) # Change multivariate = F instead of T
+}
+
+# 2. Autocorrelation plots
+diag_aucorr <- function(mcmc2){
+  for (name in colnames(mcmc2)){
+    print(coda::acfplot(mcmc2[, name], main = name))
+  }
+}
+
+
+
