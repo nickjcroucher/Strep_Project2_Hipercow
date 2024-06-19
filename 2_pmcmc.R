@@ -3,6 +3,7 @@ library(mcstate)
 library(coda)
 library(odin.dust)
 library(dust)
+library(GGally)
 
 source("global/all_function.R") # Collected functions stored here!
 
@@ -144,7 +145,7 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   new_proposal_matrix <- as.matrix(read.csv("outputs/new_proposal_mtx.csv"))
   new_proposal_matrix <- new_proposal_matrix[, -1]
   new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
-  new_proposal_matrix <- new_proposal_matrix/10 # Lilith's suggestion
+  new_proposal_matrix <- new_proposal_matrix/100 # Lilith's suggestion
   new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
   rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
   colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
@@ -207,6 +208,7 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   # 2. Autocorrelation
   diag_aucorr(mcmc2)
   
+  GGally::ggpairs(as.data.frame(tune_pmcmc_result$pars))
 }
 
 # pmcmc_run_plus_tuning(40000, 1e3)
