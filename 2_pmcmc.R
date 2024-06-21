@@ -3,7 +3,7 @@ library(mcstate)
 library(coda)
 library(odin.dust)
 library(dust)
-library(GGally)
+# library(GGally)
 
 source("global/all_function.R") # Collected functions stored here!
 
@@ -78,10 +78,10 @@ filter$run(pars)
 # Update n_particles based on calculation in 4 cores with var(x) ~ 267: 32000
 
 priors <- prepare_priors(pars)
-proposal_matrix <- diag(1, 7)
+proposal_matrix <- diag(200, 6)
 proposal_matrix <- (proposal_matrix + t(proposal_matrix)) / 2
-rownames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
-colnames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
+rownames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta")
+colnames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta")
 
 mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = proposal_matrix, transform = transform)
 
@@ -145,10 +145,10 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   new_proposal_matrix <- as.matrix(read.csv("outputs/new_proposal_mtx.csv"))
   new_proposal_matrix <- new_proposal_matrix[, -1]
   new_proposal_matrix <- apply(new_proposal_matrix, 2, as.numeric)
-  new_proposal_matrix <- new_proposal_matrix/100 # Lilith's suggestion
+  new_proposal_matrix <- new_proposal_matrix/10 # Lilith's suggestion
   new_proposal_matrix <- (new_proposal_matrix + t(new_proposal_matrix)) / 2
-  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
-  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta", "sigma_2")
+  rownames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta")
+  colnames(new_proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "log_wane", "log_delta")
   # isSymmetric(new_proposal_matrix)
   
   tune_mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal = new_proposal_matrix, transform = transform)
@@ -160,9 +160,13 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
                                          rerun_every = 50,
                                          rerun_random = TRUE,
                                          progress = TRUE,
-                                         adaptive_proposal = adaptive_proposal_control(initial_vcv_weight = 800,
-                                                                                       initial_scaling = 1,
+                                         adaptive_proposal = adaptive_proposal_control(initial_vcv_weight = 1000,
+                                                                                       # initial_scaling = 1,
+                                                                                       scaling_increment = NULL,
+                                                                                       # log_scaling_update = T,
                                                                                        acceptance_target = 0.234,
+                                                                                       forget_rate = 0.2,
+                                                                                       forget_end = Inf,
                                                                                        adapt_end = Inf
                                          ))
   
@@ -203,12 +207,21 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   
   # 1. Gelman-Rubin Diagnostic
   # https://cran.r-project.org/web/packages/coda/coda.pdf
-  diag_gelman_rubin(tune_pmcmc_result)
+  # png("pictures/diag_gelman_rubin.png", width = 17, height = 12, unit = "cm", res = 1200)
+  figs_gelman_init <- diag_init_gelman_rubin(tune_pmcmc_result)
+  fig <- diag_cov_mtx(figs_gelman_init)
+  fig <- diag_gelman_rubin(figs_gelman_init)
+  # dev.off()
   
   # 2. Autocorrelation
-  diag_aucorr(mcmc2)
+  # png("pictures/diag_aucorr.png", width = 17, height = 12, unit = "cm", res = 1200)
+  fig <- diag_aucorr(mcmc2)
+  # dev.off()
   
-  GGally::ggpairs(as.data.frame(tune_pmcmc_result$pars))
+  # png("pictures/diag_ggpairs.png", width = 17, height = 12, unit = "cm", res = 1200)
+  # fig <- GGally::ggpairs(as.data.frame(tune_pmcmc_result$pars))
+  # dev.off()
+  
 }
 
 # pmcmc_run_plus_tuning(40000, 1e3)

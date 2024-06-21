@@ -6,7 +6,7 @@ dt <- 1/freq
 initial(time) <- 0
 
 # 1. PARAMETERS ################################################################
-S_ini <- user(6e7) # 6e7 FIXED England's pop size is roughly 67,000,000
+S_ini <- user(6.7e7) # 6e7 FIXED England's pop size is roughly 67,000,000
 log_A_ini <- user(0) # S_ini*10^(log10(-5.69897)) = 120 people; change A_ini into log10(A_ini)
 D_ini <- user(0) 
 time_shift <- user(0)

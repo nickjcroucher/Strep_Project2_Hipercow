@@ -25,15 +25,15 @@ parameter_transform <- function(pars) {
   beta_1 <- pars[["beta_1"]]
   log_wane <- pars[["log_wane"]]
   log_delta <- pars[["log_delta"]]
-  sigma_2 <- pars[["sigma_2"]]
+  # sigma_2 <- pars[["sigma_2"]]
 
   list(log_A_ini = log_A_ini,
        time_shift = time_shift,
        beta_0 = beta_0,
        beta_1 = beta_1,
        log_wane = log_wane,
-       log_delta = log_delta,
-       sigma_2 = sigma_2
+       log_delta = log_delta#,
+       # sigma_2 = sigma_2
        )
   
 }
@@ -45,20 +45,20 @@ transform <- function(pars) {
 prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   
   mcmc_pars <- mcstate::pmcmc_parameters$new(
-    list(mcstate::pmcmc_parameter("log_A_ini", (-5.69897), min = -7, max = 0,
+    list(mcstate::pmcmc_parameter("log_A_ini", (-5.69897), min = (-6), max = 0,
                                   prior = priors$log_A_ini),
-         mcstate::pmcmc_parameter("time_shift", 0.2, min = 0, max = 0.5,
+         mcstate::pmcmc_parameter("time_shift", 0.2, min = 0, max = 1,
                                   prior = priors$time_shift),
          mcstate::pmcmc_parameter("beta_0", 0.06565, min = 0, max = 0.8,
                                   prior = priors$beta_0),
          mcstate::pmcmc_parameter("beta_1", 0.07, min = 0, max = 0.8,
                                   prior = priors$beta_1),
-         mcstate::pmcmc_parameter("log_wane", (-2.823909), min = (-8), max = 0.7,
+         mcstate::pmcmc_parameter("log_wane", (-2.823909), min = (-6), max = 0.7,
                                   prior = priors$log_wane),
          mcstate::pmcmc_parameter("log_delta", (-4.98), min = (-10), max = 0.7,
-                                  prior = priors$log_delta),
-         mcstate::pmcmc_parameter("sigma_2", 1, min = 0, max = 10,
-                                  prior = priors$sigma_2)
+                                  prior = priors$log_delta)#,
+         # mcstate::pmcmc_parameter("sigma_2", 1, min = 0, max = 10,
+         #                          prior = priors$sigma_2)
     ),
     proposal = proposal,
     transform = transform)
@@ -69,7 +69,7 @@ prepare_priors <- function(pars) {
   priors <- list()
   
   priors$log_A_ini <- function(s) {
-    dnorm(s, mean = (-5), sd = 1, log = TRUE)
+    dunif(s, min = (-10), max = 0, log = TRUE)
   }
   priors$time_shift <- function(s) {
     dunif(s, min = 0, max = 1, log = TRUE)
@@ -81,19 +81,19 @@ prepare_priors <- function(pars) {
     dgamma(s, shape = 1, scale = 0.1, log = TRUE)
   }
   priors$log_wane <- function(s) {
-    dunif(s, min = (-8), max = 0.7, log = TRUE)
+    dunif(s, min = (-10), max = 0.7, log = TRUE)
   }
   priors$log_delta <- function(s) {
     dunif(s, min = (-10), max = 0.7, log = TRUE)
   }
-  priors$sigma_2 <- function(s) {
-    dgamma(s, shape = 1, scale = 1, log = TRUE)
-  }
+  # priors$sigma_2 <- function(s) {
+  #   dgamma(s, shape = 1, scale = 1, log = TRUE)
+  # }
   priors
 }
 
 pmcmc_further_process <- function(n_steps, pmcmc_result) {
-  processed_chains <- mcstate::pmcmc_thin(pmcmc_result, burnin = n_steps/2, thin = 2)
+  processed_chains <- mcstate::pmcmc_thin(pmcmc_result, burnin = n_steps*0.8, thin = NULL)
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
   parameter_mean_hpd
   
@@ -117,7 +117,7 @@ pmcmc_trace <- function(mcmc1) {
 ################################################################################
 # Tuning functions
 tuning_pmcmc_further_process <- function(n_steps, tune_pmcmc_result) {
-  processed_chains <- mcstate::pmcmc_thin(tune_pmcmc_result, burnin = n_steps/2, thin = 2)
+  processed_chains <- mcstate::pmcmc_thin(tune_pmcmc_result, burnin = n_steps*0.8, thin = 2)
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
   parameter_mean_hpd
   
@@ -130,8 +130,8 @@ tuning_pmcmc_further_process <- function(n_steps, tune_pmcmc_result) {
 # 1. Gelman-Rubin Diagnostic
 # https://cran.r-project.org/web/packages/coda/coda.pdf
 
-diag_gelman_rubin <- function(tune_pmcmc_result){
-  n_chains <- tune_control$n_chains
+diag_init_gelman_rubin <- function(tune_pmcmc_result){
+  n_chains <- 4 # tune_control$n_chains
   n_samples <- nrow(tune_pmcmc_result$pars)/n_chains
   
   # Split the parameter samples and probabilities by chains
@@ -151,12 +151,17 @@ diag_gelman_rubin <- function(tune_pmcmc_result){
   
   # Combine chains into a list
   mcmc_chains_list <- do.call(mcmc.list, mcmc_chains)
-  
-  print("Covariance matrix of mcmc2")
+  mcmc_chains_list
+}
+
+diag_cov_mtx <- function(mcmc_chains_list) {
+  # print("Covariance matrix of mcmc2")
   cov(as.matrix(mcmc_chains_list))
-  
-  print("Gelman-Rubin diagnostic")
-  coda::gelman.plot(mcmc_chains_list,
+}
+
+diag_gelman_rubin <- function(mcmc_chains_list) {
+  # print("Gelman-Rubin diagnostic")
+  gelman_plot <- coda::gelman.plot(mcmc_chains_list,
                     bin.width = 10,
                     max.bins = 50,
                     confidence = 0.95,
@@ -170,6 +175,7 @@ diag_gelman_rubin <- function(tune_pmcmc_result){
                     transform=FALSE,
                     autoburnin=TRUE,
                     multivariate=F) # Change multivariate = F instead of T
+  
 }
 
 # 2. Autocorrelation plots

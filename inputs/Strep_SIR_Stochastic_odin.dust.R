@@ -3,12 +3,12 @@ library(odin.dust)
 gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
 
 # Running the SIR model with dust
-pars <- list(log_A_ini = (-5.69897), # S_ini*10^(-5.69897) = 120 people; change A_ini into log10(A_ini)
-             time_shift = 0.2,
-             beta_0 = 0.06565,
-             beta_1 = 0.07,
-             log_wane = (-2.823909),
-             log_delta = (-4.98), # will be fitted to logN(-10, 0.7)
+pars <- list(log_A_ini = (-1.79180059329553), # S_ini*10^(-5.69897) = 120 people; change A_ini into log10(A_ini)
+             time_shift = 0.366346711348848,
+             beta_0 = 0.063134635077278,
+             beta_1 = 0.161472506104886,
+             log_wane = (-0.210952113801415),
+             log_delta = (-6.03893492453891), # will be fitted to logN(-10, 0.7)
              sigma_1 = (1/15.75),
              sigma_2 = (1)
 ) # Serotype 1 is categorised to have the lowest carriage duration
