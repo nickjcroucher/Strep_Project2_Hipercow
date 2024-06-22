@@ -12,7 +12,10 @@ D_ini <- user(0)
 time_shift <- user(0)
 beta_0 <- user(0)
 beta_1 <- user(0)
-log_wane <- user(0)
+
+max_wane <- (-0.5)
+min_wane <- (-4)
+scaled_wane <- user(0)
 
 # Vaccination:
 # https://webarchive.nationalarchives.gov.uk/ukgwa/20211105111851mp_/https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/540290/hpr2416_ppv.pdf
@@ -53,7 +56,10 @@ beta_temporary <- beta_0*(1+beta_1*sin(2*pi*((time_shift*365)+time)/365))
 beta <- if (time >= 2648) beta_temporary*(1-vacc) else beta_temporary
 lambda <- beta*(A+D)/N # infectious state from Asymtomatic & Diseased individuals
 delta <- (10^(log_delta))*UK_calibration
-wane <- (10^(log_wane))
+
+log_wane <- scaled_wane*(max_wane-min_wane)+min_wane # scaled_wane*(max_wane−min_wane)+min_wane; rescaled using (wane-wane_min)/(wane_max-wane_min)
+wane <- 10^(log_wane)
+
 
 # Individual probabilities of transition
 p_SA <- 1- exp(-lambda * dt)
