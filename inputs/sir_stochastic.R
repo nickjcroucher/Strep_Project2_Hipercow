@@ -14,7 +14,7 @@ beta_0 <- user(0)
 beta_1 <- user(0)
 
 max_wane <- (-0.5)
-min_wane <- (-6)
+min_wane <- (-4)
 scaled_wane <- user(0)
 
 # Vaccination:
