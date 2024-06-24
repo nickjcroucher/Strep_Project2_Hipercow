@@ -78,7 +78,7 @@ filter$run(pars)
 # Update n_particles based on calculation in 4 cores with var(x) ~ 267: 32000
 
 priors <- prepare_priors(pars)
-proposal_matrix <- diag(200, 6)
+proposal_matrix <- diag(300, 6) # previously 200
 proposal_matrix <- (proposal_matrix + t(proposal_matrix)) / 2
 rownames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "scaled_wane", "log_delta")
 colnames(proposal_matrix) <- c("log_A_ini", "time_shift", "beta_0", "beta_1", "scaled_wane", "log_delta")
