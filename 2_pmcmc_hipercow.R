@@ -35,7 +35,7 @@ resources <- hipercow::hipercow_resources(cores = 20,
 
 # Now pmcmc_run is a function:
 # pmcmc_run <- function(n_particles, n_steps)
-id_single_plus_tuning <- task_create_expr(pmcmc_run_plus_tuning(40000, 5e5), # Update n_particles = 32000, n_steps = 1e6?
+id_single_plus_tuning <- task_create_expr(pmcmc_run_plus_tuning(40000, 5e4), # Update n_particles = 32000, n_steps = 1e6?
                                           resources = resources
 )
 
