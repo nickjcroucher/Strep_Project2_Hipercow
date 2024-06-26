@@ -3,7 +3,7 @@ library(mcstate)
 library(coda)
 library(odin.dust)
 library(dust)
-# library(GGally)
+library(GGally)
 # library(socialmixr)
 
 source("global/all_function.R") # Collected functions stored here!
@@ -220,7 +220,7 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   # dev.off()
   
   # png("pictures/diag_ggpairs.png", width = 17, height = 12, unit = "cm", res = 1200)
-  # fig <- GGally::ggpairs(as.data.frame(tune_pmcmc_result$pars))
+  fig <- GGally::ggpairs(as.data.frame(tune_pmcmc_result$pars))
   # dev.off()
   
 }
