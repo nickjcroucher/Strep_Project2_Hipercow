@@ -3,12 +3,12 @@ library(odin.dust)
 gen_sir <- odin.dust::odin_dust("inputs/sir_stochastic.R")
 
 # Running the SIR model with dust
-pars <- list(log_A_ini = (-1.79180059329553), # S_ini*10^(-5.69897) = 120 people; change A_ini into log10(A_ini)
-             time_shift = 0.366346711348848,
-             beta_0 = 0.063134635077278,
-             beta_1 = 0.161472506104886,
-             log_wane = (-0.210952113801415),
-             log_delta = (-6.03893492453891), # will be fitted to logN(-10, 0.7)
+pars <- list(log_A_ini = (-3.769332720985), # S_ini*10^(-5.69897) = 120 people; change A_ini into log10(A_ini)
+             time_shift = 0.352348204106568,
+             beta_0 = 0.063848484276862,
+             beta_1 = 0.173722962698516,
+             scaled_wane = (0.098),
+             log_delta = (-4.59032087667588), # will be fitted to logN(-10, 0.7)
              sigma_1 = (1/15.75),
              sigma_2 = (1)
 ) # Serotype 1 is categorised to have the lowest carriage duration
@@ -57,7 +57,7 @@ glimpse(x)
 ## 1. Data Load ################################################################
 incidence <- read.csv("inputs/incidence.csv")
 
-par(mar = c(5.1, 5.1, 0.5, 0.5), mgp = c(3.5, 1, 0), las = 1)
+par(mfrow = c(1,1), mar = c(5.1, 5.1, 0.5, 0.5), mgp = c(3.5, 1, 0), las = 1)
 cols <- c(S = "#8c8cd9", A = "darkred", D = "orange", R = "#999966", n_AD_daily = "#cc0099", n_AD_cumul = "green")
 # matplot(time, t(x[1, , ]), type = "l",
 #         xlab = "Time", ylab = "Number of individuals",
@@ -79,11 +79,26 @@ max(x[3,,]) # Check max D
 
 # Toy data creation ############################################################
 # glimpse(x)
-new_toyData <- as.data.frame(x[5, 1, 1:4745])
-colnames(new_toyData) <- "cases"
-glimpse(new_toyData)
+particle_1Data <- as.data.frame(x[5,,])
+transposed_particle_1Data <- t(particle_1Data)
 
-incidence <- tibble(day = 1:4745) %>% 
-  bind_cols(new_toyData)
+incidence_1particle <- tibble(day = 1:4745) %>% 
+  bind_cols(transposed_particle_1Data)
+# write.csv(incidence_1particle, file="outputs/SIS_daily_incidence_15particles.csv", row.names =F)
+# write.csv(incidence_1particle, file="outputs/SIR_daily_incidence_15particles.csv", row.names =F)
 
-# write.csv(incidence, file="inputs/incidence_toyData.csv", row.names =F)
+
+
+
+
+# all_Data <- as.data.frame(x[5, 1:15, 1:4745])
+# nrows <- length(all_Data[,,1]) # nrows = 4745
+# ncols <- length(all_Data[,1,]) # ncols = 15
+# 
+# modified <- as.data.frame(matrix(all_Data, nrow = 4745, ncol = 15, byrow = T))
+# glimpse(modified)
+# 
+# incidence_particles <- tibble(day = 1:4745) %>% 
+#   bind_cols(modified)
+# 
+# write.csv(incidence_particles, file="outputs/SIS_daily_incidence_15particles.csv", row.names =F)

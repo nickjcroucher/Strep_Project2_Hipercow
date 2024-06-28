@@ -15,7 +15,7 @@ beta_1 <- user(0)
 
 max_wane <- (-0.5)
 min_wane <- (-4)
-scaled_wane <- user(0)
+scaled_wane <- user(0.2)
 
 # Vaccination:
 # https://webarchive.nationalarchives.gov.uk/ukgwa/20211105111851mp_/https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/540290/hpr2416_ppv.pdf
@@ -69,7 +69,9 @@ p_AD <- 1- exp(-(delta/(delta+sigma_1) * dt))
 p_Dis <- 1- exp(-(sigma_2+mu_0+mu_1) * dt)
 p_DR <- 1- exp(-(sigma_2/(sigma_2+mu_0+mu_1)) * dt)
 
-p_RS <- 1- exp(-wane * dt)
+p_RS <- 1- exp(-wane * dt) # edited for test
+# p_RS <- 1- exp(-(10^(5.81837298310795E-05*((-0.5)-(-4))+(-4))) * dt)
+# p_RS <- 1- exp(-(10^(0.9*((-0.5)-(-4))+(-4))) * dt)
 
 # Draws for numbers changing between compartments
 n_SA <- rbinom(S, p_SA)

@@ -24,3 +24,4 @@ renv/
 outputs/
 outputs_compiled/
 Rplots.pdf
+error.rds
