@@ -7,7 +7,7 @@ pars <- list(log_A_ini = (-3.769332720985), # S_ini*10^(-5.69897) = 120 people; 
              time_shift = 0.352348204106568,
              beta_0 = 0.063848484276862,
              beta_1 = 0.173722962698516,
-             scaled_wane = (0.098),
+             scaled_wane = (0.071), # 5.81837298310795E-05 for SIR model
              log_delta = (-4.59032087667588), # will be fitted to logN(-10, 0.7)
              sigma_1 = (1/15.75),
              sigma_2 = (1)

@@ -41,6 +41,8 @@ pars <- list(log_A_ini = (-5.69897), # S_ini*10^(log10(-5.69897)) = 120 people; 
              time_shift = 0.2,
              beta_0 = 0.06565,
              beta_1 = 0.07, # in toy data the real value of beta_1 = 0.07
+             max_wane = (-0.5),
+             min_wane = (-4),
              scaled_wane = (0.5),
              log_delta = (-4.98),
              sigma_2 = 1

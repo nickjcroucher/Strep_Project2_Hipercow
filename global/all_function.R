@@ -45,16 +45,16 @@ transform <- function(pars) {
 prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   
   mcmc_pars <- mcstate::pmcmc_parameters$new(
-    list(mcstate::pmcmc_parameter("log_A_ini", (-4.69897), min = (-6), max = 0,
+    list(mcstate::pmcmc_parameter("log_A_ini", (-4.69897), min = (-10), max = 0,
                                   prior = priors$log_A_ini),
          mcstate::pmcmc_parameter("time_shift", 0.2, min = 0, max = 1,
                                   prior = priors$time_shift),
          mcstate::pmcmc_parameter("beta_0", 0.06565, min = 0, max = 0.8,
-                                  prior = priors$beta_0),
+                                  prior = priors$betas),
          mcstate::pmcmc_parameter("beta_1", 0.07, min = 0, max = 0.8,
-                                  prior = priors$beta_1),
+                                  prior = priors$betas),
          mcstate::pmcmc_parameter("scaled_wane", (0.5), min = (0), max = 1,
-                                  prior = priors$log_wane),
+                                  prior = priors$scaled_wane),
          mcstate::pmcmc_parameter("log_delta", (-4.98), min = (-10), max = 0.7,
                                   prior = priors$log_delta)#,
          # mcstate::pmcmc_parameter("sigma_2", 1, min = 0, max = 10,
@@ -74,10 +74,7 @@ prepare_priors <- function(pars) {
   priors$time_shift <- function(s) {
     dunif(s, min = 0, max = 1, log = TRUE)
   }
-  priors$beta_0 <- function(s) {
-    dgamma(s, shape = 1, scale = 0.1, log = TRUE)
-  }
-  priors$beta_1 <- function(s) {
+  priors$betas <- function(s) {
     dgamma(s, shape = 1, scale = 0.1, log = TRUE)
   }
   priors$scaled_wane <- function(s) {
