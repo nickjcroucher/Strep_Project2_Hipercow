@@ -253,10 +253,7 @@ dat_G$Earliest.specimen.date <- as.Date(dat_G$Earliest.specimen.date)
 all_date <- data.frame(allDate = seq.Date(from = min(dat_G$Earliest.specimen.date),
                                           to = max(dat_G$Earliest.specimen.date), 
                                           by = 1))
-# all_date$day <- 1:nrow(all_date)
-all_date <- all_date %>% 
-  dplyr::mutate(day = 1:nrow(allDate),
-                week = )
+all_date$day <- 1:nrow(all_date)
 
 # Coz the incidence only requires 2 columns called "counts" and "Day" in NUMBERS
 # The counts (but in 0 counts the date are not recorded)
@@ -316,21 +313,33 @@ legend("topleft", names(col_imD), fill = col_imD, bty = "n")
 dev.off()
 
 # Viz per-week counts by base R plot
-png("pictures/weekly_cases.png", width = 17, height = 12, unit = "cm", res = 1200)
-par(bty = "n", mar = c(3, 3, 1, 1), mgp = c(1.5, 0.5, 0))
-col_imD <- c(counts_Ser1 = "deepskyblue3",
-             counts_meningitis = "green",
-             counts_30DDeath = "maroon")
-plot(Natm_n_imD$allDate, Natm_n_imD$counts_Ser1, type = "b",
-     xlab = "Date (year)", ylab = "Counts",
-     ylim = c(0, max(Natm_n_imD$counts_Ser1)+2),
-     col = col_imD[1], pch = 20)
+# https://stackoverflow.com/questions/30431444/plotting-by-week-with-ggplot-in-r
+# https://stackoverflow.com/questions/3777174/plotting-two-variables-as-lines-using-ggplot2-on-the-same-graph
+Natm_n_imD$weeks <- cut(Natm_n_imD[,"allDate"], breaks="week")
+Nat_weekly <- Natm_n_imD %>% 
+  dplyr::group_by(weeks) %>% 
+  dplyr::summarise(counts_Ser1_weekly = sum(counts_Ser1),
+                   counts_meningitis_weekly = sum(counts_meningitis),
+                   counts_30DDeath_weekly = sum(counts_30DDeath)) %>% 
+  dplyr::ungroup() #%>% 
 
-lines(Natm_n_imD$allDate, Natm_n_imD$counts_meningitis,
-      type = "b", col = col_imD[2], pch = 20)
-lines(Natm_n_imD$allDate, Natm_n_imD$counts_30DDeath,
-      type = "b", col = col_imD[3], pch = 20)
-legend("topleft", names(col_imD), fill = col_imD, bty = "n")
+png("pictures/weekly_cases.png", width = 17, height = 12, unit = "cm", res = 1200)
+col_imD_weekly <- c(counts_Ser1_weekly = "deepskyblue3",
+             counts_meningitis_weekly = "green",
+             counts_30DDeath_weekly = "maroon")
+ggplot(Nat_weekly, aes(as.Date(weeks))) +
+  geom_line(aes(y = counts_Ser1_weekly, colour = "counts_Ser1_weekly")) +
+  geom_line(aes(y = counts_meningitis_weekly, colour = "counts_meningitis_weekly")) +
+  geom_line(aes(y = counts_30DDeath_weekly, colour = "counts_30DDeath_weekly")) +
+  scale_x_date() +
+  scale_color_manual(values = col_imD_weekly,
+                     name = "Cases",
+                     breaks = c("counts_Ser1_weekly", "counts_meningitis_weekly", "counts_30DDeath_weekly"),
+                     labels = c("Serotype 1", "Meningitis", "30 Days Death")
+  ) +
+  ggtitle("The Counts of Serotype 1 in England") +
+  xlab("Year") +
+  ylab("Serotype 1 Cases (Aggregated by Week)")
 dev.off()
 
 ## 2. Data Fitting #############################################################
