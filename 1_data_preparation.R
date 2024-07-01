@@ -323,6 +323,14 @@ Nat_weekly <- Natm_n_imD %>%
                    counts_30DDeath_weekly = sum(counts_30DDeath)) %>% 
   dplyr::ungroup() #%>% 
 
+dir.create("inputs")
+
+incidence_weekly <- Nat_weekly %>% 
+  dplyr::select(weeks, counts_Ser1_weekly) %>% 
+  dplyr::rename(cases = counts_Ser1_weekly) # That annoying name
+
+write.csv(incidence_weekly, "inputs/incidence_weekly.csv", row.names = FALSE)
+
 png("pictures/weekly_cases.png", width = 17, height = 12, unit = "cm", res = 1200)
 col_imD_weekly <- c(counts_Ser1_weekly = "deepskyblue3",
              counts_meningitis_weekly = "green",

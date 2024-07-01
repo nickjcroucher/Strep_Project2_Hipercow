@@ -58,7 +58,7 @@ lambda <- beta*(A+D)/N # infectious state from Asymtomatic & Diseased individual
 delta <- (10^(log_delta))*UK_calibration
 
 # log_wane <- scaled_wane*(max_wane-min_wane)+min_wane # scaled_wane*(max_wane−min_wane)+min_wane; rescaled using (wane-wane_min)/(wane_max-wane_min)
-wane <- 10^(scaled_wane*((-2)-(-6))+(-6))
+wane <- 10^(scaled_wane*((-0.5)-(-4))+(-4))
 
 
 # Individual probabilities of transition

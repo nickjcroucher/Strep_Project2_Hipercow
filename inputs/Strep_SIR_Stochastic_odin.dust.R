@@ -7,7 +7,7 @@ pars <- list(log_A_ini = (-3.77931571203353), # S_ini*10^(-5.69897) = 120 people
              time_shift = 0.352271704195464,
              beta_0 = 0.0637307345664443,
              beta_1 = 0.174886960992199,
-             scaled_wane = (0.00285405280622231), # 5.81837298310795E-05 for SIR model
+             scaled_wane = (0.098), # 5.81837298310795E-05 for SIR model
              log_delta = (-4.55125666926139), # will be fitted to logN(-10, 0.7)
              sigma_1 = (1/15.75),
              sigma_2 = (1)
@@ -55,13 +55,11 @@ library(tidyverse)
 glimpse(x)
 
 ## 1. Data Load ################################################################
+## 1.1. Daily incidence
 incidence <- read.csv("inputs/incidence.csv")
 
 par(mfrow = c(1,1), mar = c(5.1, 5.1, 0.5, 0.5), mgp = c(3.5, 1, 0), las = 1)
 cols <- c(S = "#8c8cd9", A = "darkred", D = "orange", R = "#999966", n_AD_daily = "#cc0099", n_AD_cumul = "green")
-# matplot(time, t(x[1, , ]), type = "l",
-#         xlab = "Time", ylab = "Number of individuals",
-#         col = cols[["S"]], lty = 1, ylim = range(x))
 matplot(time, t(x[5, , ]), type = "l",
         xlab = "Time", ylab = "Number of individuals",
         col = cols[["n_AD_daily"]], lty = 1)#, ylim = max(x[2,,]))
@@ -76,6 +74,46 @@ matlines(incidence$day, incidence$cases, type = "l", col = "steelblue")
 legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
 max(x[5,,]) # Check max n_AD_daily
 max(x[3,,]) # Check max D
+
+## 1.2. Weekly incidence
+incidence_weekly <- read.csv("inputs/incidence_weekly.csv")
+data_weekly <- incidence_weekly %>% 
+  dplyr::group_by(weeks) %>% 
+  dplyr::summarise(cases_weekly = sum(cases))
+
+# Data preparation for model
+min_date <- "2003-01-01"
+max_date <- "2015-12-28"
+all_date <- data.frame(allDate = seq.Date(from = as.Date(min_date),
+                                          to = as.Date(max_date), 
+                                          by = 1))
+daily_incidence_modelled <- as.data.frame(t(x[5, , ]))
+model_binds <- dplyr::bind_cols(all_date, daily_incidence_modelled)
+model_binds$weeks <- cut(model_binds[,"allDate"], breaks="week")
+model_weekly <- model_binds %>% 
+  dplyr::group_by(weeks) %>% 
+  dplyr::summarise(model_weekly = sum(V1))
+
+data_plus_model <- dplyr::full_join(data_weekly, model_weekly,
+                             by = c("weeks"))
+
+# Plot!
+png("pictures/data_plus_model.png", width = 17, height = 12, unit = "cm", res = 1200)
+col_imD_weekly <- c(cases_weekly = "deepskyblue3",
+                    model_weekly = "maroon")
+ggplot(data_plus_model, aes(as.Date(weeks))) +
+  geom_line(aes(y = cases_weekly, colour = "cases_weekly")) +
+  geom_line(aes(y = model_weekly, colour = "model_weekly")) +
+  scale_x_date() +
+  scale_color_manual(values = col_imD_weekly,
+                     name = "Cases",
+                     breaks = c("cases_weekly", "model_weekly"),
+                     labels = c("Data", "Model")
+  ) +
+  ggtitle("The Comparison of Model Output and Counts of Serotype 1 in England") +
+  xlab("Year") +
+  ylab("Serotype 1 Cases (Aggregated by Week)")
+dev.off()
 
 # Toy data creation ############################################################
 # glimpse(x)
