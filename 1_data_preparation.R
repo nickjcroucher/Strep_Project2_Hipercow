@@ -1,6 +1,7 @@
 # Data preparation
 library(tidyverse)
 library(readxl)
+library(epitools)
 
 # New updated data with meningitis (25.04.2024)
 # All df are stored in raw_data
@@ -21,16 +22,19 @@ dat_G <- dat %>%
            year >= 2011 ~ "PCV13",
            TRUE ~ NA_character_
          ),
-         ageGroup = case_when(
-           AGEYR < 2 ~ "<2",
-           AGEYR >= 2 & AGEYR < 5 ~ "2-4",
-           AGEYR >= 5 & AGEYR < 15 ~ "5-14",
-           AGEYR >= 15 & AGEYR < 31 ~ "15-30", # Edit the Age-band into 15-30 & 31-44
-           AGEYR >= 31 & AGEYR < 45 ~ "31-44", # Edit the Age-band into 15-30 & 31-44
-           AGEYR >= 45 & AGEYR < 65 ~ "45-64",
+         ageGroup = case_when( # edit 5 age bands
+           AGEYR < 5 ~ "<5",
+           AGEYR >= 5 & AGEYR < 19 ~ "5-18",
+           AGEYR >= 19 & AGEYR < 31 ~ "19-30",
+           AGEYR >= 31 & AGEYR < 65 ~ "31-64",
            AGEYR >= 65 ~ "65+",
            is.na(AGEYR) ~ "Unknown" # 16 IDs have no AGEYR
            # TRUE ~ "Unknown" 
+         ),
+         ageGroup2 = case_when(
+           AGEYR < 15 ~ "children",
+           AGEYR >= 15 ~ "adults",
+           is.na(AGEYR) ~ "Unknown" # 16 IDs have no AGEYR
          ),
          current.region.name = ifelse(current.region.name == "EASTERN", "EAST", current.region.name), # Wrong perception of "EASTERN" that should be "EAST"
          current.region.name = case_when(
@@ -49,33 +53,231 @@ dat_G <- dat %>%
   ) #%>% 
   # glimpse()
 
+# EpiDescription based on incidences and CI
+# Total population data by age, year for each region
+# SOURCE: https://www.nomisweb.co.uk/
+pop <- read_excel("raw_data/nomis_2024_04_15_124553_DCedit.xlsx") #%>% 
+  # glimpse()
+
+pop_l <- pop %>% 
+  tidyr::pivot_longer(cols = `2001`:`2022`,
+               names_to = "Year",
+               values_to = "PopSize") %>% 
+  dplyr::mutate(Age = gsub("Age ", "", Age),
+         Age = ifelse(Age == "Aged 90+", 90, as.numeric(Age)), # For incidence calculation, data grouped for people aged 90+
+         ageGroup = case_when( # edit 5 age bands
+           Age < 5 ~ "<5",
+           Age >= 5 & Age < 19 ~ "5-18",
+           Age >= 19 & Age < 31 ~ "19-30",
+           Age >= 31 & Age < 65 ~ "31-64",
+           Age >= 65 ~ "65+",
+           is.na(Age) ~ "Unknown" # 16 IDs have no Age
+           # TRUE ~ "Unknown" 
+         ),
+         ageGroup2 = case_when(
+           Age < 15 ~ "children",
+           Age >= 15 ~ "adults",
+           is.na(Age) ~ "Unknown" # 16 IDs have no AGEYR
+         ),
+         Year = as.numeric(Year)) %>% 
+  glimpse()
+
+# Vaccination programme:
+# SOURCE: https://www.gov.uk/government/publications/pneumococcal-the-green-book-chapter-25
+vaccine_UK <- data.frame(
+  year = c(2006, 2011),
+  vaccine = c("PCV7", "PCV13")
+)
+# Colour names:
+# https://www.datanovia.com/en/blog/awesome-list-of-657-r-color-names/
+col_map <- c("<5" = "indianred4",
+             "5-18" = "orange",
+             "19-30" = "seagreen4",
+             "31-64" = "steelblue",
+             "65+" = "purple3",
+             "Unknown" = "black",
+             "children" = "darkred",
+             "adults" = "darkblue"
+)
+
+vacc_map <- c("PCV7" = "gray80",
+              "PCV13" = "gray20")
+
+col_imD <- c(incid_Ser1 = "deepskyblue3",
+             incid_m = "green",
+             incid_D = "maroon")
+
+# CI calculations for children-adults
+ageGroup2 <- dat_G %>% 
+  dplyr::group_by(year, ageGroup2) %>% 
+  dplyr::summarise(counts = n()) %>% 
+  dplyr::ungroup()
+
+pop_ageGroup2 <- pop_l %>% 
+  dplyr::group_by(Year, ageGroup2) %>% 
+  dplyr::summarise(PopSize = sum(PopSize)) %>% 
+  dplyr::ungroup()
+
+all_ageGroup2 <- merge(ageGroup2, pop_ageGroup2,
+               by.x = c("year","ageGroup2"),
+               by.y = c("Year", "ageGroup2")) %>%
+  dplyr::mutate(Conf_Int = epitools::binom.exact(counts, PopSize),
+         incid_Ser1 = Conf_Int$proportion) # per-100,000 population
+
+write.csv(all_ageGroup2, "raw_data/incidence_CI_per_year_2_ageGroup.csv", row.names = FALSE)
+
+# Viz counts
+png("pictures/counts_2ageGroups.png", width = 17, height = 12, unit = "cm", res = 1200)
+ggplot(all_ageGroup2, aes(x = year, y = counts, group = ageGroup2,
+                color = ageGroup2)) +
+  geom_line(size = 1.5) +
+  geom_vline(data = vaccine_UK, aes(xintercept = year,
+                                    colour = vaccine),
+             linetype = "dashed") +
+  scale_color_manual(values = c(col_map),
+                     name = "Demographic",
+                     breaks = c("children", "adults"),
+                     labels = c("Children (< 15)", "Adults")
+  ) +
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + # delete weird decimals in Year
+  geom_label(aes(x = 2006, y = 150, label = "PCV7"),
+             fill = "white", color = "black") + # 2006 = PCV7 = "gray80"
+  geom_label(aes(x = 2011, y = 150, label = "PCV13"),
+             fill = "white", color = "black") + # 2011 = PCV13 = "gray20"
+  ggtitle("The Counts of Serotype 1 in England by Demographic Groups") +
+  xlab("Year") +
+  ylab("Serotype 1 Cases")
+dev.off()
+
+# Viz incidence
+png("pictures/incidence_2ageGroups.png", width = 17, height = 12, unit = "cm", res = 1200)
+ggplot(all_ageGroup2, aes(x = year, y = Conf_Int$proportion*100000, group = ageGroup2,
+                  color = ageGroup2)) +
+  geom_line(size = 1.5) +
+  geom_errorbar(aes(ymin = Conf_Int$lower*100000, ymax = Conf_Int$upper*100000), # It doesn't matter whether I add the CI or not because the Pop data is quite huge, I suppose (?)
+                width = .1) +
+  geom_vline(data = vaccine_UK, aes(xintercept = year,
+                                    colour = vaccine),
+             linetype = "dashed") +
+  scale_color_manual(values = c(col_map),
+                     name = "Demographic",
+                     breaks = c("children", "adults"),
+                     labels = c("Children (< 15)", "Adults")
+  ) +
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + # delete weird decimals in Year
+  scale_linetype_manual(values = c(vacc_map),
+                        name = "Vaccine",
+                        labels = c("PCV7", "PCV13")) +
+  geom_label(aes(x = 2006, y = 0.15, label = "PCV7"),
+             fill = "white", color = "black") + # 2006 = PCV7 = "gray80"
+  geom_label(aes(x = 2011, y = 0.15, label = "PCV13"),
+             fill = "white", color = "black") + # 2011 = PCV13 = "gray20"
+  ggtitle("The Incidence of Serotype 1 in England \nby Demographic Groups (per 100,000)") +
+  xlab("Year") +
+  ylab("Serotype 1 Incidence")
+dev.off()
+
+# CI calculations for 5 ageGroups
+ageGroup5 <- dat_G %>% 
+  dplyr::group_by(year, ageGroup) %>% 
+  dplyr::summarise(counts = n()) %>% 
+  dplyr::ungroup()
+
+pop_ageGroup5 <- pop_l %>% 
+  dplyr::group_by(Year, ageGroup) %>% 
+  dplyr::summarise(PopSize = sum(PopSize)) %>% 
+  dplyr::ungroup()
+
+all_ageGroup5 <- merge(ageGroup5, pop_ageGroup5,
+                       by.x = c("year","ageGroup"),
+                       by.y = c("Year", "ageGroup")) %>%
+  dplyr::mutate(Conf_Int = epitools::binom.exact(counts, PopSize),
+                incid_Ser1 = Conf_Int$proportion) # per-100,000 population
+
+write.csv(all_ageGroup5, "raw_data/incidence_CI_per_year_5_ageGroup.csv", row.names = FALSE)
+
+# Viz counts
+png("pictures/counts_5ageGroups.png", width = 17, height = 12, unit = "cm", res = 1200)
+ggplot(all_ageGroup5, aes(x = year, y = counts, group = ageGroup,
+                          color = ageGroup)) +
+  geom_line(size = 1.5) +
+  geom_vline(data = vaccine_UK, aes(xintercept = year,
+                                    colour = vaccine),
+             linetype = "dashed") +
+  scale_color_manual(values = c(col_map),
+                     name = "Demographic",
+                     breaks = c("<5", "5-18", "19-30", "31-64", "65+", "Unknown"),
+                     labels = c("<5", "5-18", "19-30", "31-64", "65+", "Unknown")
+  ) +
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + # delete weird decimals in Year
+  geom_label(aes(x = 2006, y = 175, label = "PCV7"),
+             fill = "white", color = "black") + # 2006 = PCV7 = "gray80"
+  geom_label(aes(x = 2011, y = 250, label = "PCV13"),
+             fill = "white", color = "black") + # 2011 = PCV13 = "gray20"
+  ggtitle("The Counts of Serotype 1 in England by Demographic Groups") +
+  xlab("Year") +
+  ylab("Serotype 1 Cases")
+dev.off()
+
+# Viz incidence
+png("pictures/incidence_5ageGroups.png", width = 17, height = 12, unit = "cm", res = 1200)
+ggplot(all_ageGroup5, aes(x = year, y = Conf_Int$proportion*100000, group = ageGroup,
+                  color = ageGroup)) +
+  geom_line(size = 1.5) +
+  geom_errorbar(aes(ymin = Conf_Int$lower*100000, ymax = Conf_Int$upper*100000), # It doesn't matter whether I add the CI or not because the Pop data is quite huge, I suppose (?)
+                width = .1) +
+  geom_vline(data = vaccine_UK, aes(xintercept = year,
+                                    colour = vaccine),
+             linetype = "dashed") +
+  scale_color_manual(values = c(col_map),
+                     name = "Demographic",
+                     breaks = c("<5", "5-18", "19-30", "31-64", "65+", "Unknown"),
+                     labels = c("<5", "5-18", "19-30", "31-64", "65+", "Unknown")
+  ) +
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + # delete weird decimals in Year
+  scale_linetype_manual(values = c(vacc_map),
+                        name = "Vaccine",
+                        labels = c("PCV7", "PCV13")) +
+  geom_label(aes(x = 2006, y = 0.15, label = "PCV7"),
+             fill = "white", color = "black") + # 2006 = PCV7 = "gray80"
+  geom_label(aes(x = 2011, y = 0.15, label = "PCV13"),
+             fill = "white", color = "black") + # 2011 = PCV13 = "gray20"
+  ggtitle("The Incidence of Serotype 1 in England \nby Demographic Groups (per 100,000)") +
+  xlab("Year") +
+  ylab("Serotype 1 Incidence")
+dev.off()
+
 # Basic case count data without age structure or regions
 # Create all hypothetical recorded disease date
 dat_G$Earliest.specimen.date <- as.Date(dat_G$Earliest.specimen.date)
 all_date <- data.frame(allDate = seq.Date(from = min(dat_G$Earliest.specimen.date),
                                           to = max(dat_G$Earliest.specimen.date), 
                                           by = 1))
-all_date$day <- 1:nrow(all_date)
+# all_date$day <- 1:nrow(all_date)
+all_date <- all_date %>% 
+  dplyr::mutate(day = 1:nrow(allDate),
+                week = )
+
 # Coz the incidence only requires 2 columns called "counts" and "Day" in NUMBERS
 # The counts (but in 0 counts the date are not recorded)
 Natm_ni <- dat_G %>% 
   dplyr::group_by(Earliest.specimen.date) %>% 
   dplyr::summarise(counts_Ser1 = n()) %>% 
-  ungroup() #%>% 
+  dplyr::ungroup() #%>% 
 # glimpse()
 
 Natm_nmeningitis <- dat_G %>% 
   dplyr::filter(MeningitisFlag == "Y") %>% 
   dplyr::group_by(Earliest.specimen.date) %>% 
   dplyr::summarise(counts_meningitis = n()) %>% 
-  ungroup() #%>% 
+  dplyr::ungroup() #%>% 
 # glimpse()
 
 Natm_n30DDeath <- dat_G %>% 
   dplyr::filter(`30daydeath` == "D") %>% 
   dplyr::group_by(Earliest.specimen.date) %>% 
   dplyr::summarise(counts_30DDeath = n()) %>% 
-  ungroup() #%>% 
+  dplyr::ungroup() #%>% 
 # glimpse()
 
 
@@ -91,16 +293,30 @@ Natm_n_imD <- dplyr::full_join(Natm_n_im, Natm_n30DDeath,
   replace(is.na(.), 0) #%>% # NA means no data of meningitis or 30 days death, changed them to 0
   # glimpse()
 
-# Total population data by age, year for each region
-# SOURCE: https://www.nomisweb.co.uk/
-# pop <- read_excel("nomis_2024_04_15_124553_DCedit.xlsx") %>% 
-# glimpse()
-# I don't think I need total population for now,
+
 # Examples on https://github.com/mrc-ide/mcstate/blob/master/inst/sir_incidence.csv
 # Requires case count per aligned day only
 
 # Viz per-day counts by base R plot
 png("pictures/daily_cases.png", width = 17, height = 12, unit = "cm", res = 1200)
+par(bty = "n", mar = c(3, 3, 1, 1), mgp = c(1.5, 0.5, 0))
+col_imD <- c(counts_Ser1 = "deepskyblue3",
+             counts_meningitis = "green",
+             counts_30DDeath = "maroon")
+plot(Natm_n_imD$allDate, Natm_n_imD$counts_Ser1, type = "b",
+     xlab = "Date (year)", ylab = "Counts",
+     ylim = c(0, max(Natm_n_imD$counts_Ser1)+2),
+     col = col_imD[1], pch = 20)
+
+lines(Natm_n_imD$allDate, Natm_n_imD$counts_meningitis,
+      type = "b", col = col_imD[2], pch = 20)
+lines(Natm_n_imD$allDate, Natm_n_imD$counts_30DDeath,
+      type = "b", col = col_imD[3], pch = 20)
+legend("topleft", names(col_imD), fill = col_imD, bty = "n")
+dev.off()
+
+# Viz per-week counts by base R plot
+png("pictures/weekly_cases.png", width = 17, height = 12, unit = "cm", res = 1200)
 par(bty = "n", mar = c(3, 3, 1, 1), mgp = c(1.5, 0.5, 0))
 col_imD <- c(counts_Ser1 = "deepskyblue3",
              counts_meningitis = "green",
