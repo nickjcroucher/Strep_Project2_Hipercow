@@ -185,12 +185,16 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   tune_pmcmc_result
   saveRDS(tune_pmcmc_result, "outputs/tune_pmcmc_result.rds")
   
-  # new_proposal_mtx <- cov(pmcmc_result$pars)
-  # write.csv(new_proposal_mtx, "outputs/new_proposal_mtx.csv", row.names = TRUE)
-  
   tune_lpost_max <- which.max(tune_pmcmc_result$probabilities[, "log_posterior"])
-  write.csv(as.list(tune_pmcmc_result$pars[tune_lpost_max, ]),
-            "outputs/tune_initial.csv", row.names = FALSE)
+  mcmc_lo_CI <- apply(tune_pmcmc_result$pars, 2, function(x) quantile(x, probs = 0.025))
+  mcmc_hi_CI <- apply(tune_pmcmc_result$pars, 2, function(x) quantile(x, probs = 0.975))
+  
+  binds_tune_initial <- rbind(as.list(tune_pmcmc_result$pars[tune_lpost_max, ]), mcmc_lo_CI, mcmc_hi_CI)
+  t_tune_initial <- t(binds_tune_initial)
+  colnames(t_tune_initial) <- c("values", "low_CI", "high_CI")
+  
+  write.csv(t_tune_initial,
+            "outputs/tune_initial_with_CI.csv", row.names = FALSE)
   
   # Further processing for thinning chains
   mcmc2 <- tuning_pmcmc_further_process(n_steps, tune_pmcmc_result)
