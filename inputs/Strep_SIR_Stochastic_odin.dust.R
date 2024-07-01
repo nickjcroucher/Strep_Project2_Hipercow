@@ -35,7 +35,8 @@ x <- array(NA, dim = c(sir_model$info()$len, n_particles, n_times))
 # Beta check
 time <- seq(1, n_times, 1)
 time_shift <- 70
-beta <- pars$beta_0*(1+pars$beta_1*sin(2*pi*(time_shift+time)/365))
+beta <- pars$beta_0 + pars$beta_0*pars$beta_1*sin(2*pi*((time_shift)+time)/365) + pars$beta_0*pars$beta_2*sin(2*pi*((time_shift*365)+time)/365)
+# beta <- pars$beta_0*(1+pars$beta_1*sin(2*pi*(time_shift+time)/365))
 max(beta)
 min(beta)
 
