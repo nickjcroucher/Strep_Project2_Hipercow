@@ -100,7 +100,7 @@ data_plus_model <- dplyr::full_join(data_weekly, model_weekly,
                              by = c("weeks"))
 
 # Plot!
-png("pictures/data_plus_model.png", width = 17, height = 12, unit = "cm", res = 1200)
+# png("pictures/data_plus_model.png", width = 17, height = 12, unit = "cm", res = 1200)
 col_imD_weekly <- c(cases_weekly = "deepskyblue3",
                     model_weekly = "maroon")
 ggplot(data_plus_model, aes(as.Date(weeks))) +
@@ -115,7 +115,7 @@ ggplot(data_plus_model, aes(as.Date(weeks))) +
   ggtitle("The Comparison of Model Output and Counts of Serotype 1 in England") +
   xlab("Year") +
   ylab("Serotype 1 Cases (Aggregated by Week)")
-dev.off()
+# dev.off()
 
 # Toy data creation ############################################################
 # glimpse(x)
