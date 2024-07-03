@@ -20,7 +20,8 @@ case_compare <- function(state, observed, pars = NULL) {
 # https://github.com/mrc-ide/mcstate/issues/184
 parameter_transform <- function(pars) {
   log_A_ini <- pars[["log_A_ini"]]
-  time_shift <- pars[["time_shift"]]
+  time_shift_1 <- pars[["time_shift_1"]]
+  time_shift_2 <- pars[["time_shift_2"]]
   beta_0 <- pars[["beta_0"]]
   beta_1 <- pars[["beta_1"]]
   beta_2 <- pars[["beta_2"]]
@@ -29,7 +30,8 @@ parameter_transform <- function(pars) {
   # sigma_2 <- pars[["sigma_2"]]
 
   list(log_A_ini = log_A_ini,
-       time_shift = time_shift,
+       time_shift_1 = time_shift_1,
+       time_shift_2 = time_shift_2,
        beta_0 = beta_0,
        beta_1 = beta_1,
        beta_2 = beta_2,
@@ -49,8 +51,10 @@ prepare_parameters <- function(initial_pars, priors, proposal, transform) {
   mcmc_pars <- mcstate::pmcmc_parameters$new(
     list(mcstate::pmcmc_parameter("log_A_ini", (-4.69897), min = (-10), max = 0,
                                   prior = priors$log_A_ini),
-         mcstate::pmcmc_parameter("time_shift", 0.2, min = 0, max = 1,
-                                  prior = priors$time_shift),
+         mcstate::pmcmc_parameter("time_shift_1", 0.2, min = 0, max = 1,
+                                  prior = priors$time_shifts),
+         mcstate::pmcmc_parameter("time_shift_2", 0.2, min = 0, max = 1,
+                                  prior = priors$time_shifts),
          mcstate::pmcmc_parameter("beta_0", 0.06565, min = 0, max = 0.8,
                                   prior = priors$betas),
          mcstate::pmcmc_parameter("beta_1", 0.07, min = 0, max = 1,
@@ -75,7 +79,7 @@ prepare_priors <- function(pars) {
   priors$log_A_ini <- function(s) {
     dunif(s, min = (-10), max = 0, log = TRUE)
   }
-  priors$time_shift <- function(s) {
+  priors$time_shifts <- function(s) {
     dunif(s, min = 0, max = 1, log = TRUE)
   }
   priors$betas <- function(s) {
