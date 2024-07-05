@@ -9,5 +9,8 @@ mcstate
 odin.dust
 coda
 dust
+ape
 
+epiforecasts/socialmixr
 ggobi/ggally
+xavierdidelot/BactDating
