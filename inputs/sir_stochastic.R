@@ -15,8 +15,8 @@ beta_0 <- user(0)
 beta_1 <- user(0)
 beta_2 <- user(0)
 
-max_wane <- (-0.5) # FIXED, scaled waning immunity
-min_wane <- (-4) # FIXED, scaled waning immunity
+max_wane <- (0) # FIXED, scaled waning immunity
+min_wane <- (-2) # FIXED, scaled waning immunity
 scaled_wane <- user(0)
 
 # Vaccination:
