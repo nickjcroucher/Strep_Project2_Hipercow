@@ -5,7 +5,7 @@ library(epitools)
 
 # New updated data with meningitis (25.04.2024)
 # All df are stored in raw_data
-dat <- read_excel("raw_data/serotype1_UKHSA_imperial_date_age_region_MOLIS_withdeath_meningitis_clean.xlsx") #%>% 
+dat <- readxl::read_excel("raw_data/serotype1_UKHSA_imperial_date_age_region_MOLIS_withdeath_meningitis_clean.xlsx") #%>% 
 # glimpse()
 
 dat <- dat %>% 
@@ -56,7 +56,7 @@ dat_G <- dat %>%
 # EpiDescription based on incidences and CI
 # Total population data by age, year for each region
 # SOURCE: https://www.nomisweb.co.uk/
-pop <- read_excel("raw_data/nomis_2024_04_15_124553_DCedit.xlsx") #%>% 
+pop <- readxl::read_excel("raw_data/nomis_2024_04_15_124553_DCedit.xlsx") #%>% 
   # glimpse()
 
 pop_l <- pop %>% 
@@ -370,4 +370,19 @@ hist(incidence$cases,
      main = "Histogram of Daily Cases",
      xlab = "Daily Incidence") # huge zero daily cases occur
 dev.off()
+
+## 3. AMR Analysis #############################################################
+# Load dat_G first.
+link_ID <- readxl::read_excel("raw_data/gubbins/ukhsa_assemblies_02_07_24.xlsx")
+link_ID$assembly_name <- substr(link_ID$assembly_name, 1, (nchar(link_ID$assembly_name)-6)) # That annoying last 6 chara of ".fasta"
+
+amr_smx <- read.csv("raw_data/gubbins/resistance_folp_smx.csv")
+amr_tmp <- read.csv("raw_data/gubbins/resistance_dhfr_tmp.csv")
+
+dat_G_amr <- dplyr::left_join(dat_G, link_ID, by = "ID")
+dat_G_amr <- dplyr::left_join(dat_G_amr, amr_smx, by = c("assembly_name" = "isolate_id"))
+dat_G_amr <- dplyr::left_join(dat_G_amr, amr_tmp, by = c("assembly_name" = "isolate_id"))
+dat_G_amr <- dat_G_amr %>% 
+  dplyr::rename(resistance_smx = Resistance.x,
+                resistance_tmp = Resistance.y)
 
