@@ -32,3 +32,32 @@ stats_G <- stats_joined %>%
                    mean_total_bps = mean(total_bps)) %>% 
   dplyr::ungroup()
 
+# PLOT Stats_joined N50, colours based on delete_priority
+col_map <- c("0" = "lightgreen", "1" = "red", "2" = "orange", "3" = "gold2")
+stats_joined$col <- col_map[as.character(stats_joined$delete_priority)]
+
+png("pictures/tree_pruning.png", width = 12, height = 18, unit = "cm", res = 1200)
+par(mfrow = c(3,2), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
+plot(stats_joined$N50, stats_joined$L50,
+     col = stats_joined$col,
+     pch = 1, xlab = "", ylab = "L50")
+plot(stats_joined$N50, stats_joined$mean,
+     col = stats_joined$col,
+     pch = 1, xlab = "", ylab = "mean")
+plot(stats_joined$N50, stats_joined$median,
+     col = stats_joined$col,
+     pch = 1, xlab = "", ylab = "median")
+
+plot(stats_joined$N50, stats_joined$sequence_count,
+     col = stats_joined$col,
+     pch = 1, xlab = "", ylab = "Sequence Count")
+plot(stats_joined$N50, stats_joined$shortest,
+     col = stats_joined$col,
+     pch = 1, xlab = "", ylab = "Shortest")
+plot(stats_joined$N50, stats_joined$total_bps,
+     col = stats_joined$col,
+     pch = 1, xlab = "", ylab = "Total BPS")
+
+dev.off()
+
+par(mfrow = c(1,1))

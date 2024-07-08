@@ -2,6 +2,7 @@
 library(tidyverse)
 library(readxl)
 library(epitools)
+library(BactDating)
 
 # New updated data with meningitis (25.04.2024)
 # All df are stored in raw_data
@@ -386,3 +387,16 @@ dat_G_amr <- dat_G_amr %>%
   dplyr::rename(resistance_smx = Resistance.x,
                 resistance_tmp = Resistance.y)
 
+## 4. Data Preparation for Microreact ##########################################
+# Load dat_G first.
+data <- readxl::read_excel("raw_data/gubbins/ukhsa_assemblies_02_07_24.xlsx")
+tre <- BactDating::loadGubbins("raw_data/gubbins/n739_")
+
+tre_names <- as.data.frame(tre$tip.label)
+tre_names$ID <- substr(tre$tip.label, 1, 8)
+tre_names <- dplyr::left_join(tre_names, data, by = c("ID" = "ngsid"))
+tre_names <- dplyr::left_join(tre_names, dat_G, by = c("ID.y" = "ID"))
+tre_names <- tre_names %>% 
+  dplyr::mutate(Earliest.specimen.date = as.Date(Earliest.specimen.date))
+
+write.csv(tre_names, "raw_data/gubbins/microreact_tre_names.csv", row.names = FALSE)

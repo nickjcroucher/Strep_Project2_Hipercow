@@ -22,6 +22,17 @@ run_bacdating <- function(nbIts){
   
   tre <- BactDating::loadGubbins("raw_data/gubbins/n739_")
   
+  # Options to reduce Priority_1 tips (check microreact) #######################
+  del_priority1 <- scan("raw_data/gubbins/leaf_labels_priority_1.txt",
+                        what = "character", sep = "\n")
+  tre <- ape::drop.tip(tre, del_priority1)
+  
+  del_priority2 <- scan("raw_data/gubbins/leaf_labels_priority_2.txt",
+                        what = "character", sep = "\n")
+  tre <- ape::drop.tip(tre, del_priority2)
+  
+  # Options to reduce Priority_1 tips (check microreact) #######################
+  
   # Temporary analysis coz' they don't share the dates (yet) ###################
   # tre <- loadGubbins("raw_data/gubbins/n739_")
   # datess <- as.vector(seq.Date(from = as.Date("2003-01-01"),
@@ -51,37 +62,50 @@ run_bacdating <- function(nbIts){
   
   set.seed(0)
   
+  dir.create("outputs/genomics/del_priority12", FALSE, TRUE)
+  dir.create("pictures/genomics/del_priority12", FALSE, TRUE)
+  
   res_pr <- BactDating::bactdate(tre,d,nbIts=nbIts, # Put 1e6 or 1e10 on hipercow
                                  model = "arc",
                                  showProgress = T)
   
-  dir.create("outputs/genomics", FALSE, TRUE)
-  saveRDS(res_pr, "outputs/genomics/mcmc_bacdating.rds")
+  saveRDS(res_pr, "outputs/genomics/del_priority12/mcmc_bacdating.rds")
   
   # Figures!
-  fig <- plot(res_pr,'treeCI',show.tip.label = F)
-  fig <- plot(res_pr,'trace')
+  png("pictures/genomics/del_priority12/tree_treeCI.png", width = 18, height = 12, unit = "cm", res = 1200)
+  plot(res_pr,'treeCI',show.tip.label = F)
+  dev.off()
+  
+  png("pictures/genomics/del_priority12/tree_trace1.png", width = 18, height = 12, unit = "cm", res = 1200)
+  plot(res_pr,'trace')
+  dev.off()
   
   # MCMC analysis
   mcmc_result <- BactDating::as.mcmc.resBactDating(res_pr)
   
   # Calculating ESS & Acceptance Rate
   calc_ess <- ess_calculation(mcmc_result)
-  write.csv(calc_ess, "outputs/genomics/calc_ess.csv", row.names = TRUE)
+  write.csv(calc_ess, "outputs/genomics/del_priority12/calc_ess.csv", row.names = TRUE)
   
   # Figures! (still failed, margin error)
-  fig <- pmcmc_trace(mcmc_result)
+  png("pictures/genomics/del_priority12/tree_trace2.png", width = 18, height = 12, unit = "cm", res = 1200)
+  pmcmc_trace(mcmc_result)
+  dev.off()
   
   Sys.sleep(10) # wait 10 secs
   
   # Rooted tree!
+  png("pictures/genomics/del_priority12/tree_rootedtree.png", width = 18, height = 12, unit = "cm", res = 1200)
   rooted_tree <- BactDating::initRoot(tre,d[,1]) # Incompatible dimensions because of d as matrix of (74,2)
-  saveRDS(rooted_tree, "outputs/genomics/rooted_tree.rds")
+  saveRDS(rooted_tree, "outputs/genomics/del_priority12/rooted_tree.rds")
+  dev.off()
   
   Sys.sleep(10) # wait 10 secs
   
+  png("pictures/genomics/del_priority12/tree_roottotip.png", width = 18, height = 12, unit = "cm", res = 1200)
   res_roottotip <- BactDating::roottotip(rooted_tree,d[,1])
-  saveRDS(res_roottotip, "outputs/genomics/res_roottotip.rds")
+  saveRDS(res_roottotip, "outputs/genomics/del_priority12/res_roottotip.rds")
+  dev.off()
   
 }
 
