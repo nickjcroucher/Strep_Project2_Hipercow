@@ -32,32 +32,59 @@ stats_G <- stats_joined %>%
                    mean_total_bps = mean(total_bps)) %>% 
   dplyr::ungroup()
 
-# PLOT Stats_joined N50, colours based on delete_priority
-col_map <- c("0" = "lightgreen", "1" = "red", "2" = "orange", "3" = "gold2")
+# PLOT Stats_joined N50, colours based on delete_priority ######################
+col_map <- c("0" = "lightgreen", "1" = "red", "2" = "darkorange", "3" = "gold2")
 stats_joined$col <- col_map[as.character(stats_joined$delete_priority)]
 
 png("pictures/tree_pruning.png", width = 12, height = 18, unit = "cm", res = 1200)
 par(mfrow = c(3,2), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
-plot(stats_joined$N50, stats_joined$L50,
+plot(stats_joined$L50, stats_joined$N50,
      col = stats_joined$col,
-     pch = 1, xlab = "", ylab = "L50")
-plot(stats_joined$N50, stats_joined$mean,
+     pch = 1, xlab = "L50", ylab = "")
+plot(stats_joined$mean, stats_joined$N50,
      col = stats_joined$col,
-     pch = 1, xlab = "", ylab = "mean")
-plot(stats_joined$N50, stats_joined$median,
+     pch = 1, xlab = "Mean", ylab = "")
+plot(stats_joined$median, stats_joined$N50,
      col = stats_joined$col,
-     pch = 1, xlab = "", ylab = "median")
+     pch = 1, xlab = "Median", ylab = "")
 
-plot(stats_joined$N50, stats_joined$sequence_count,
+plot(stats_joined$sequence_count, stats_joined$N50,
      col = stats_joined$col,
-     pch = 1, xlab = "", ylab = "Sequence Count")
-plot(stats_joined$N50, stats_joined$shortest,
+     pch = 1, xlab = "Sequence Count", ylab = "")
+plot(stats_joined$shortest, stats_joined$N50,
      col = stats_joined$col,
-     pch = 1, xlab = "", ylab = "Shortest")
-plot(stats_joined$N50, stats_joined$total_bps,
+     pch = 1, xlab = "Shortest", ylab = "")
+plot(stats_joined$total_bps, stats_joined$N50,
      col = stats_joined$col,
-     pch = 1, xlab = "", ylab = "Total BPS")
+     pch = 1, xlab = "Total BPS", ylab = "")
 
 dev.off()
 
 par(mfrow = c(1,1))
+
+# Pruning based on N50 30kb (n = 703) ##########################################
+stats_30kb <- stats_joined %>% 
+  dplyr::filter(N50 >= 30000,
+                delete_priority == 0) %>% # remove delete priority 1
+  dplyr::mutate(fasta_list = paste0(contigs, ".fasta"))
+
+# Data viz!
+stats_30kb$col <- col_map[as.character(stats_30kb$delete_priority)]
+
+png("pictures/tree_pruning_final_n703.png", width = 12, height = 12, unit = "cm", res = 1200)
+par(mfrow = c(1,1), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0))
+plot(stats_30kb$total_bps, stats_30kb$N50,
+     col = "darkgreen", #stats_30kb$col,
+     pch = 1,
+     xlim = c(min(stats_30kb$total_bps), (max(stats_30kb$total_bps)+10000)),
+     xlab = "Total Base Pairs", ylab = "N50",
+     main = "Selected Samples (n = 703)")
+
+dev.off()
+
+# Generate list
+remove_GPSC31_choosen_n703_list <- stats_30kb$fasta_list
+
+write.table(remove_GPSC31_choosen_n703_list, "outputs/genomics/remove_GPSC31_choosen_n703_list.txt", 
+            row.names = FALSE, col.names = FALSE, quote = FALSE)
+
