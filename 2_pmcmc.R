@@ -197,7 +197,7 @@ pmcmc_run_plus_tuning <- function(n_particles, n_steps){
   colnames(t_tune_initial) <- c("values", "low_CI", "high_CI")
   
   write.csv(t_tune_initial,
-            "outputs/tune_initial_with_CI.csv", row.names = FALSE)
+            "outputs/tune_initial_with_CI.csv", row.names = T)
   
   # Further processing for thinning chains
   mcmc2 <- tuning_pmcmc_further_process(n_steps, tune_pmcmc_result)
