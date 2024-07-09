@@ -97,6 +97,7 @@ mcmc_pars <- prepare_parameters(initial_pars = pars, priors = priors, proposal =
 
 # Directory for saving the outputs
 dir.create("outputs", FALSE, TRUE)
+dir.create("pictures", FALSE, TRUE)
 
 # Trial combine pMCMC + tuning #################################################
 pmcmc_run_plus_tuning <- function(n_particles, n_steps){

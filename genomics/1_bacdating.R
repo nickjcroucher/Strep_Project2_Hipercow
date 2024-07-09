@@ -20,30 +20,7 @@ run_bacdating <- function(nbIts){
   data <- readxl::read_excel("raw_data/gubbins/ukhsa_assemblies_02_07_24.xlsx")
   dat <- readxl::read_excel("raw_data/serotype1_UKHSA_imperial_date_age_region_MOLIS_withdeath_meningitis_clean.xlsx") #%>% 
   
-  tre <- BactDating::loadGubbins("raw_data/gubbins/n739_")
-  
-  # Options to reduce Priority_1 tips (check microreact) #######################
-  del_priority1 <- scan("raw_data/gubbins/leaf_labels_priority_1.txt",
-                        what = "character", sep = "\n")
-  tre <- ape::drop.tip(tre, del_priority1)
-  
-  del_priority2 <- scan("raw_data/gubbins/leaf_labels_priority_2.txt",
-                        what = "character", sep = "\n")
-  tre <- ape::drop.tip(tre, del_priority2)
-  
-  # Options to reduce Priority_1 tips (check microreact) #######################
-  
-  # Temporary analysis coz' they don't share the dates (yet) ###################
-  # tre <- loadGubbins("raw_data/gubbins/n739_")
-  # datess <- as.vector(seq.Date(from = as.Date("2003-01-01"),
-  #                              to = as.Date("2015-12-28"),
-  #                              by = "year"))
-  # truetreee=simcoaltree(datess)
-  # tre=unroot(simobsphy(truetreee))
-  # tre$unrec=runif(length(tre$edge.length))
-  # plot(tre)
-  # axisPhylo(backward = F)
-  # edgelabels(round(100*tre$unrec))
+  tre <- BactDating::loadGubbins("raw_data/gubbins/n703/n703_")
   
   
   ##############################################################################
@@ -53,58 +30,73 @@ run_bacdating <- function(nbIts){
   tre_names <- dplyr::left_join(tre_names, data, by = c("ID" = "ngsid"))
   tre_names <- dplyr::left_join(tre_names, dat, by = c("ID.y" = "ID"))
   tre_names <- tre_names %>% 
-    dplyr::mutate(Earliestspecimendate = as.Date(Earliestspecimendate))
+    dplyr::mutate(Earliestspecimendate = as.Date(Earliestspecimendate),
+                  year = year(Earliestspecimendate))
   
   # 2. BacDating ###############################################################
   # https://xavierdidelot.github.io/BactDating/articles/yourData.html
-  d <- cbind(tre_names$Earliestspecimendate, tre_names$Earliestspecimendate+1) # 2-d matrix according to the articles above
-  
+  d <- cbind(tre_names$year, tre_names$year+1) # 2-d matrix according to the articles above
   
   set.seed(0)
   
-  dir.create("outputs/genomics/del_priority12", FALSE, TRUE)
-  dir.create("pictures/genomics/del_priority12", FALSE, TRUE)
+  dir.create("outputs/genomics/choosen_n703", FALSE, TRUE)
+  dir.create("pictures/genomics/choosen_n703", FALSE, TRUE)
   
   res_pr <- BactDating::bactdate(tre,d,nbIts=nbIts, # Put 1e6 or 1e10 on hipercow
                                  model = "arc",
                                  showProgress = T)
   
-  saveRDS(res_pr, "outputs/genomics/del_priority12/mcmc_bacdating.rds")
+  saveRDS(res_pr, "outputs/genomics/choosen_n703/mcmc_bacdating.rds")
   
   # Figures!
-  png("pictures/genomics/del_priority12/tree_treeCI.png", width = 18, height = 12, unit = "cm", res = 1200)
+  png("pictures/genomics/choosen_n703/tree_treeCI.png", width = 24, height = 12, unit = "cm", res = 1200)
+  par(mfrow = c(1,1), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
   plot(res_pr,'treeCI',show.tip.label = F)
   dev.off()
   
-  png("pictures/genomics/del_priority12/tree_trace1.png", width = 18, height = 12, unit = "cm", res = 1200)
+  png("pictures/genomics/choosen_n703/tree_trace1.png", width = 24, height = 12, unit = "cm", res = 1200)
+  par(mfrow = c(1,1), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
   plot(res_pr,'trace')
   dev.off()
+  
+  # ggplot(gene_dist_df, #%>% dplyr::filter(Gene == "group_2797"),
+  #        aes(x = record,
+  #            colour = Presence,
+  #            fill = Presence)) +
+  #   geom_bar() +
+  #   facet_wrap(~SC) +
+  #   theme_bw()
   
   # MCMC analysis
   mcmc_result <- BactDating::as.mcmc.resBactDating(res_pr)
   
   # Calculating ESS & Acceptance Rate
   calc_ess <- ess_calculation(mcmc_result)
-  write.csv(calc_ess, "outputs/genomics/del_priority12/calc_ess.csv", row.names = TRUE)
+  write.csv(calc_ess, "outputs/genomics/choosen_n703/calc_ess.csv", row.names = TRUE)
   
   # Figures! (still failed, margin error)
-  png("pictures/genomics/del_priority12/tree_trace2.png", width = 18, height = 12, unit = "cm", res = 1200)
+  png("pictures/genomics/choosen_n703/tree_trace2.png", width = 24, height = 12, unit = "cm", res = 1200)
+  par(mfrow = c(1,1), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
   pmcmc_trace(mcmc_result)
   dev.off()
   
   Sys.sleep(10) # wait 10 secs
   
   # Rooted tree!
-  png("pictures/genomics/del_priority12/tree_rootedtree.png", width = 18, height = 12, unit = "cm", res = 1200)
   rooted_tree <- BactDating::initRoot(tre,d[,1]) # Incompatible dimensions because of d as matrix of (74,2)
-  saveRDS(rooted_tree, "outputs/genomics/del_priority12/rooted_tree.rds")
+  saveRDS(rooted_tree, "outputs/genomics/choosen_n703/rooted_tree.rds")
+  
+  png("pictures/genomics/choosen_n703/tree_rootedtree.png", width = 24, height = 12, unit = "cm", res = 1200)
+  par(mfrow = c(1,1), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
+  plot(rooted_tree, show.tip.label = F)
   dev.off()
   
   Sys.sleep(10) # wait 10 secs
   
-  png("pictures/genomics/del_priority12/tree_roottotip.png", width = 18, height = 12, unit = "cm", res = 1200)
+  png("pictures/genomics/choosen_n703/tree_roottotip.png", width = 24, height = 12, unit = "cm", res = 1200)
+  par(mfrow = c(1,1), mar = c(3, 3, 2, 2), mgp = c(1.7, 0.7, 0), bty = "n")
   res_roottotip <- BactDating::roottotip(rooted_tree,d[,1])
-  saveRDS(res_roottotip, "outputs/genomics/del_priority12/res_roottotip.rds")
+  saveRDS(res_roottotip, "outputs/genomics/choosen_n703/res_roottotip.rds")
   dev.off()
   
 }
