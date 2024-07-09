@@ -377,8 +377,8 @@ dev.off()
 link_ID <- readxl::read_excel("raw_data/gubbins/ukhsa_assemblies_02_07_24.xlsx")
 link_ID$assembly_name <- substr(link_ID$assembly_name, 1, (nchar(link_ID$assembly_name)-6)) # That annoying last 6 chara of ".fasta"
 
-amr_smx <- read.csv("raw_data/gubbins/resistance_folp_smx.csv")
-amr_tmp <- read.csv("raw_data/gubbins/resistance_dhfr_tmp.csv")
+amr_smx <- read.csv("raw_data/gubbins/n739/resistance_folp_smx.csv")
+amr_tmp <- read.csv("raw_data/gubbins/n739/resistance_dhfr_tmp.csv")
 
 dat_G_amr <- dplyr::left_join(dat_G, link_ID, by = "ID")
 dat_G_amr <- dplyr::left_join(dat_G_amr, amr_smx, by = c("assembly_name" = "isolate_id"))
@@ -387,16 +387,32 @@ dat_G_amr <- dat_G_amr %>%
   dplyr::rename(resistance_smx = Resistance.x,
                 resistance_tmp = Resistance.y)
 
+# Choose AMR analysis based on 703 choosen samples
+suppressWarnings({
+  GPSC31_choosen_n703_list <- read.table("outputs/genomics/remove_GPSC31_choosen_n703_list.txt", header = F)
+})
+GPSC31_choosen_n703_list$assembly_name <- substr(GPSC31_choosen_n703_list$V1, 1, (nchar(GPSC31_choosen_n703_list$V1)-6)) # That annoying last 6 chara of ".fasta"
+
+dat_G_amr_choosen_n703 <- dplyr::left_join(GPSC31_choosen_n703_list, dat_G_amr, by = "assembly_name")
+
 ## 4. Data Preparation for Microreact ##########################################
 # Load dat_G first.
 data <- readxl::read_excel("raw_data/gubbins/ukhsa_assemblies_02_07_24.xlsx")
-tre <- BactDating::loadGubbins("raw_data/gubbins/n739_")
+tre <- BactDating::loadGubbins("raw_data/gubbins/n739/n739_")
 
 tre_names <- as.data.frame(tre$tip.label)
 tre_names$ID <- substr(tre$tip.label, 1, 8)
 tre_names <- dplyr::left_join(tre_names, data, by = c("ID" = "ngsid"))
 tre_names <- dplyr::left_join(tre_names, dat_G, by = c("ID.y" = "ID"))
-tre_names <- tre_names %>% 
-  dplyr::mutate(Earliest.specimen.date = as.Date(Earliest.specimen.date))
 
-write.csv(tre_names, "raw_data/gubbins/microreact_tre_names.csv", row.names = FALSE)
+# Including AMR
+tre_names <- dplyr::left_join(tre_names, amr_smx, by = c("tre$tip.label" = "isolate_id"))
+tre_names <- dplyr::left_join(tre_names, amr_tmp, by = c("tre$tip.label" = "isolate_id"))
+
+tre_names <- tre_names %>% 
+  dplyr::mutate(Earliest.specimen.date = as.Date(Earliest.specimen.date)) %>% 
+  dplyr::rename(resistance_smx = Resistance.x,
+                resistance_tmp = Resistance.y)
+
+write.csv(tre_names, "raw_data/gubbins/n739/phandago_check/microreact_tre_names.csv", row.names = FALSE)
+write.csv(tre_names, "raw_data/gubbins/n703/phandago_check/microreact_tre_names.csv", row.names = FALSE)

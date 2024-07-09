@@ -1,14 +1,14 @@
 
 library(tidyverse)
 
-stats <- read.csv("raw_data/gubbins/stats_compiled.csv")
+stats <- read.csv("raw_data/gubbins/n739/stats_compiled.csv")
 stats$contigs <- substr(stats$file, 7, 51)
 
 # Pruning based on tree output from microreact (https://microreact.org/upload)
 suppressWarnings({
-pr_1 <- read.table("raw_data/gubbins/leaf_labels_priority_1.txt", header = F)
-pr_2 <- read.table("raw_data/gubbins/leaf_labels_priority_2.txt", header = F)
-pr_3 <- read.table("raw_data/gubbins/leaf_labels_priority_3.txt", header = F)
+pr_1 <- read.table("raw_data/gubbins/n739/leaf_labels_priority_1.txt", header = F)
+pr_2 <- read.table("raw_data/gubbins/n739/leaf_labels_priority_2.txt", header = F)
+pr_3 <- read.table("raw_data/gubbins/n739/leaf_labels_priority_3.txt", header = F)
 })
 
 pr_1$delete_priority <- 1
