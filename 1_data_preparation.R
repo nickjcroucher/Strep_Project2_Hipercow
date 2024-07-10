@@ -89,6 +89,24 @@ vaccine_UK <- data.frame(
   year = c(2006, 2011),
   vaccine = c("PCV7", "PCV13")
 )
+
+# Simple counts & incidence per year
+all_year <- dat_G %>% 
+  dplyr::group_by(year) %>% 
+  dplyr::summarise(counts = n()) %>% 
+  dplyr::ungroup()
+
+pop_year <- pop_l %>% 
+  dplyr::group_by(Year) %>% 
+  dplyr::summarise(PopSize = sum(PopSize)) %>% 
+  dplyr::ungroup()
+
+all_combined <- merge(all_year, pop_year,
+                       by.x = c("year"),
+                       by.y = c("Year")) %>%
+  dplyr::mutate(Conf_Int = epitools::binom.exact(counts, PopSize),
+                incid_Ser1 = Conf_Int$proportion) # per-100,000 population
+
 # Colour names:
 # https://www.datanovia.com/en/blog/awesome-list-of-657-r-color-names/
 col_map <- c("<5" = "indianred4",
@@ -107,6 +125,48 @@ vacc_map <- c("PCV7" = "gray80",
 col_imD <- c(incid_Ser1 = "deepskyblue3",
              incid_m = "green",
              incid_D = "maroon")
+
+# Viz counts
+png("pictures/counts_allages.png", width = 17, height = 12, unit = "cm", res = 1200)
+ggplot(all_year, aes(x = year, y = counts)) +
+  geom_line(size = 1.5) +
+  geom_vline(data = vaccine_UK, aes(xintercept = year),
+             linetype = "dashed") +
+  # scale_color_manual(values = "black"
+  # ) +
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + # delete weird decimals in Year
+  geom_label(aes(x = 2006, y = 150, label = "PCV7"),
+             fill = "white", color = "black") + # 2006 = PCV7 = "gray80"
+  geom_label(aes(x = 2011, y = 150, label = "PCV13"),
+             fill = "white", color = "black") + # 2011 = PCV13 = "gray20"
+  ggtitle("The Counts of Serotype 1 in England") +
+  xlab("Year") +
+  ylab("Serotype 1 Cases")
+dev.off()
+
+# Viz incidence
+png("pictures/incidence_allages.png", width = 17, height = 12, unit = "cm", res = 1200)
+ggplot(all_combined, aes(x = year, y = Conf_Int$proportion*100000)) +
+  geom_line(size = 1.5) +
+  geom_errorbar(aes(ymin = Conf_Int$lower*100000, ymax = Conf_Int$upper*100000), # It doesn't matter whether I add the CI or not because the Pop data is quite huge, I suppose (?)
+                width = .1) +
+  geom_vline(data = vaccine_UK, aes(xintercept = year),
+             linetype = "dashed") +
+  scale_color_manual(values = "black"
+  ) +
+  scale_x_continuous(breaks = ~ axisTicks(., log = FALSE)) + # delete weird decimals in Year
+  scale_linetype_manual(values = c(vacc_map),
+                        name = "Vaccine",
+                        labels = c("PCV7", "PCV13")) +
+  geom_label(aes(x = 2006, y = 0.15, label = "PCV7"),
+             fill = "white", color = "black") + # 2006 = PCV7 = "gray80"
+  geom_label(aes(x = 2011, y = 0.15, label = "PCV13"),
+             fill = "white", color = "black") + # 2011 = PCV13 = "gray20"
+  ggtitle("The Incidence of Serotype 1 in England \n(per 100,000)") +
+  xlab("Year") +
+  ylab("Serotype 1 Incidence")
+dev.off()
+
 
 # CI calculations for children-adults
 ageGroup2 <- dat_G %>% 
