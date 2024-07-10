@@ -43,7 +43,7 @@ run_bacdating <- function(nbIts){
   dir.create("pictures/genomics/choosen_n703", FALSE, TRUE)
   
   res_pr <- BactDating::bactdate(tre,d,nbIts=nbIts, # Put 1e6 or 1e10 on hipercow
-                                 model = "arc",
+                                 model = "strictgamma", # "arc",
                                  showProgress = T)
   
   saveRDS(res_pr, "outputs/genomics/choosen_n703/mcmc_bacdating.rds")
