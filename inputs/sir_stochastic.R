@@ -15,8 +15,8 @@ beta_0 <- user(0)
 beta_1 <- user(0)
 beta_2 <- user(0)
 
-max_wane <- (0) # FIXED, scaled waning immunity
-min_wane <- (-2) # FIXED, scaled waning immunity
+max_wane <- user(0) # FIXED, scaled waning immunity
+min_wane <- user(-4) # FIXED, scaled waning immunity
 scaled_wane <- user(0)
 
 # Vaccination:
@@ -62,30 +62,29 @@ delta <- (10^(log_delta))*UK_calibration
 
 log_wane <- scaled_wane*(max_wane-min_wane)+min_wane # scaled_wane*(max_wane−min_wane)+min_wane; rescaled using (wane-wane_min)/(wane_max-wane_min)
 wane <- 10^(log_wane)
-# wane <- 0
+#wane <- 0
 
 # Individual probabilities of transition
 p_SA <- 1- exp(-lambda * dt)
 p_Asym <- 1- exp(-(delta+sigma_1) * dt)
-p_AD <- 1- exp(-(delta/(delta+sigma_1) * dt))
-p_AR <- 1- exp(-(sigma_1)/(delta+sigma_1) * dt)
-
 p_Dis <- 1- exp(-(sigma_2+mu_0+mu_1) * dt)
-p_DR <- 1- exp(-(sigma_2/(sigma_2+mu_0+mu_1)) * dt)
-p_Dd <- 1- exp(-(mu_1/(sigma_2+mu_0+mu_1)) * dt)
-
 p_RS <- 1- exp(-wane * dt)
 
 # Draws for numbers changing between compartments
+# Leaving S
 n_SA <- rbinom(S, p_SA)
+
+# Leaving A
 n_Asym <- rbinom(A, p_Asym) # n_Asym <- n_AD + n_AR cause cyclic dependency error
-n_AD <- rbinom(n_Asym, p_AD)
-n_AR <- rbinom((n_Asym - n_AD), p_AR)
+n_AD <- rbinom(n_Asym, delta/(delta+sigma_1))
+n_AR <- n_Asym - n_AD
 
+# Leaving D
 n_Dis <- rbinom(D, p_Dis)
-n_DR <- rbinom(n_Dis, p_DR)
-n_Dd <- rbinom((n_Dis - n_DR), p_Dd)
+n_DR <- rbinom(n_Dis, sigma_2/(sigma_2+mu_0+mu_1))
+n_Dd <- n_Dis - n_DR
 
+# Leaving R
 n_RS <- rbinom(R, p_RS)
 
 # The transitions
