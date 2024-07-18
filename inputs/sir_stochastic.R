@@ -37,7 +37,7 @@ UK_calibration <- user(0.8066608) # FIXED (Lochen et al., 2022)
 log_delta <- user(0) # required in mcState
 sigma_1 <- user(1/15.75) # FIXED per-day, carriage duration (95% CI 7.88-31.49) (Serotype 1) (Chaguza et al., 2021)
 sigma_2 <- user(0)
-mu_0 <- 1/(80.70*365) # background mortality FIXED based on the inverse of life expectancy
+mu_0 <- user(1/(80.70*365)) # background mortality FIXED based on the inverse of life expectancy
 mu_1 <- user(192/(4064*4745)) # FIXED disease-associated mortality; ratio 192/4064 in 4745 days
 pi <- user(3.141593) # FIXED
 
@@ -57,8 +57,8 @@ beta_temporary <- beta_0*((1+beta_1*cos(2*pi*((time_shift_1*365)+time)/365)) + (
 # https://cran.r-project.org/web/packages/finalsize/vignettes/varying_contacts.html
 beta <- if (time >= 2648) beta_temporary*(1-vacc) else beta_temporary
 
-lambda <- beta*(A+D)/N # infectious state from Asymtomatic & Diseased individuals
-delta <- (10^(log_delta))*UK_calibration
+lambda <- if ((A + D) > 0) beta*(A+D)/N else 0 # infectious state from Asymtomatic & Diseased individuals
+delta <- (10^(log_delta)) # I think best to calibrate after the inference because we may decide on a different adjustment
 
 #log_wane <- scaled_wane*(max_wane-min_wane)+min_wane # scaled_wane*(max_wane−min_wane)+min_wane; rescaled using (wane-wane_min)/(wane_max-wane_min)
 #wane <- 10^(log_wane)
