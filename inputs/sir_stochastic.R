@@ -56,8 +56,7 @@ beta_temporary <- beta_0*((1+beta_1*cos(2*pi*((time_shift_1*365)+time)/365)) + (
 # https://fingertips.phe.org.uk/search/vaccination#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/30306/age/30/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1/page-options/tre-do-0
 # https://cran.r-project.org/web/packages/finalsize/vignettes/varying_contacts.html
 beta <- if (time >= 2648) beta_temporary*(1-vacc) else beta_temporary
-
-lambda <- if ((A + D) > 0) beta*(A+D)/N else 0 # infectious state from Asymtomatic & Diseased individuals
+lambda <- beta*(A+D)/N
 delta <- (10^(log_delta)) # I think best to calibrate after the inference because we may decide on a different adjustment
 
 #log_wane <- scaled_wane*(max_wane-min_wane)+min_wane # scaled_wane*(max_wane−min_wane)+min_wane; rescaled using (wane-wane_min)/(wane_max-wane_min)
